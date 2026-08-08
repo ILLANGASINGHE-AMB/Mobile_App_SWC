@@ -1,56 +1,25 @@
-Quotations is not only for saved customers, for any client ( name changable)
 
-FOOTER NOTES section should be editable
-deafualt is 
-- Free pick-up and delivery for orders exceeding Rs 3,000.00
--Contact instruction for pricing queries
+•⁠  ⁠Quotation ID – automatic generate (cannot edit)
 
-Add an option to items page as
-Terms and Conditions 
-this should be editable and make as deafult for FOOTER NOTES .So when generating quotation it will be added as deafult .  Also user can edit it when generating quotation or edit the default value on the items page.
+User input section for Issued By (Name & Designation)
+should not have a placeholder. it should be editable
 
 
+•⁠  ⁠Issued by – Signature part (UI change) 
+Authorized Signature text → issued by
+remove issued by from "Issued by: Name & Designation part from pdf bill section
 
-PDF Quotation Format
+•⁠  ⁠Customized item price list per customers are there, so if the user selects that custom price listed customers,
+the prices for each items should be taken from that custom price list
 
-DOCUMENT TITLE
-"Service Quotation" (centered/header)
-
-Letter head (Default as all PDF bills)
-
-Customer Name 
-Issued Date
-Valid Until`
-Quotation ID
-
-Items | Price (LKR)                           |
-        Dry Clean|	Wash & Press|	Wash & Dry|
+if no custom price list, the default price list should be taken from the items table
 
 
-Footer Note (as Notes & Terms:)
+•⁠  ⁠Increase arrow for price in item works as Decimals
+make it changing integers than decimals
 
-Issued by (Name and Designation Typable)
-dotted line for the signature
+•⁠  ⁠Some items are missing when generate a Quotation pdf, the quotation should come from items table directly to the quotation bill
 
+•⁠  ⁠Need numbering for items list and quotation bill pdf
 
-Thank You for choosing Sagacious Washing Center!
-
-When Generating Quotation,
-The Prices of each item and items should be editable or deletable
-
-bottom of the items page,
-add a section to strore Quotations Generated History
-
-It should be in a table
-
-| No | Quotation ID | Customer Name | Issued Date | Valid Until | Action |
-
-(Action is for buttons View, Print, Delete)
-
-generated quotation number should be in format QUO-nnnmmmyy
-
-example ID
- Quotation for date 2026/08/09 = 
-
- QUO-0010826
-
+•⁠  ⁠Add bullets for Notes & Terms

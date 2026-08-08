@@ -539,26 +539,19 @@ async function showGenerateQuotationModal() {
   const custOptions = `<option value="">-- Custom Client / Any Client --</option>` +
     sortedCust.map(c => `<option value="${c.id}">${c.hotel_name}${c.contact_person ? ' (' + c.contact_person + ')' : ''}</option>`).join('');
 
-  // Normalize catalog items map
-  const catalogMap = {};
-  const normalize = name => (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  allCatalogItems.forEach(i => catalogMap[normalize(i.item_name)] = i);
+  // Build items directly from catalog in items table
+  const sortedCatalogItems = [...allCatalogItems].sort((a,b)=>(a.item_id||'').localeCompare(b.item_id||''));
 
-  // Build combined item names list preserving standard order
-  const itemNamesSet = new Set(QUOTATION_ITEM_ORDER);
-  allCatalogItems.forEach(i => itemNamesSet.add(i.item_name));
-
-  currentQuotationItems = Array.from(itemNamesSet).map((name, idx) => {
-    const norm = normalize(name);
-    const catItem = catalogMap[norm] || allCatalogItems.find(i => normalize(i.item_name).includes(norm) || norm.includes(normalize(i.item_name)));
+  currentQuotationItems = sortedCatalogItems.map((item, idx) => {
     return {
       id: idx + 1,
-      name: name,
-      catalog_id: catItem ? catItem.id : null,
+      catalog_id: item.id,
+      item_code: item.item_id,
+      name: item.item_name,
       included: true,
-      dry_clean: catItem ? (catItem.dry_clean_price || 0) : 0,
-      wash_press: catItem ? (catItem.wash_press_price || 0) : 0,
-      wash_dry: catItem ? (catItem.wash_dry_price || 0) : 0
+      dry_clean: item.dry_clean_price || 0,
+      wash_press: item.wash_press_price || 0,
+      wash_dry: item.wash_dry_price || 0
     };
   });
 
@@ -574,11 +567,11 @@ async function showGenerateQuotationModal() {
       </div>
       <div class="form-group">
         <label class="form-label">Client Name * (Editable for Any Client)</label>
-        <input class="form-input" id="gq-client-name" placeholder="e.g. Walk-in Client / Hotel Name" value=""/>
+        <input class="form-input" id="gq-client-name" value=""/>
       </div>
       <div class="form-group">
-        <label class="form-label">Quotation ID *</label>
-        <input class="form-input" id="gq-quote-id" value="${initialQuoteId}"/>
+        <label class="form-label">Quotation ID (Auto-generated)</label>
+        <input class="form-input" id="gq-quote-id" value="${initialQuoteId}" readonly style="background:var(--bg);cursor:not-allowed;font-family:monospace;font-weight:700;"/>
       </div>
       <div class="form-group">
         <label class="form-label">Issued Date *</label>
@@ -590,7 +583,7 @@ async function showGenerateQuotationModal() {
       </div>
       <div class="form-group">
         <label class="form-label">Issued By (Name &amp; Designation)</label>
-        <input class="form-input" id="gq-issued-by" placeholder="e.g. Manager - SWC" value="Manager - Sagacious Washing Center"/>
+        <input class="form-input" id="gq-issued-by" value="Manager - Sagacious Washing Center"/>
       </div>
     </div>
 
@@ -607,6 +600,7 @@ async function showGenerateQuotationModal() {
         <table style="width:100%;border-collapse:collapse;font-size:0.85em;">
           <thead style="position:sticky;top:0;background:var(--card-bg);z-index:2;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
             <tr style="border-bottom:1px solid var(--border);background:var(--bg);">
+              <th style="padding:8px;text-align:center;width:40px;">No.</th>
               <th style="padding:8px;text-align:center;width:40px;">Inc.</th>
               <th style="padding:8px;text-align:left;">Item Name</th>
               <th style="padding:8px;text-align:right;width:110px;">Dry Clean</th>
@@ -638,28 +632,44 @@ async function showGenerateQuotationModal() {
 
 async function onQuotationCustomerChange(custId) {
   const clientInput = document.getElementById('gq-client-name');
+  const allCatalogItems = await DB.getItems();
+  const catalogMap = {};
+  allCatalogItems.forEach(i => catalogMap[i.id] = i);
+
   if (!custId) {
     if (clientInput) clientInput.value = '';
+    // Reset item prices to catalog defaults
+    currentQuotationItems.forEach(item => {
+      const catItem = catalogMap[item.catalog_id];
+      if (catItem) {
+        item.dry_clean = catItem.dry_clean_price || 0;
+        item.wash_press = catItem.wash_press_price || 0;
+        item.wash_dry = catItem.wash_dry_price || 0;
+      }
+    });
+    const tbody = document.getElementById('gq-items-tbody');
+    if (tbody) tbody.innerHTML = _renderQuotationModalItemRows();
     return;
   }
+
   const customer = await DB.getCustomer(custId);
   if (!customer) return;
   if (clientInput) clientInput.value = customer.hotel_name || '';
 
   const customPrices = customer.custom_prices || {};
-  const allCatalogItems = await DB.getItems();
-  const normalize = name => (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const catalogMap = {};
-  allCatalogItems.forEach(i => catalogMap[normalize(i.item_name)] = i);
 
   currentQuotationItems.forEach(item => {
-    const catItem = item.catalog_id ? allCatalogItems.find(i => i.id === item.catalog_id) : catalogMap[normalize(item.name)];
+    const catItem = catalogMap[item.catalog_id];
     if (catItem) {
       const custPrice = customPrices[catItem.id];
       if (custPrice) {
-        if (custPrice.dry_clean != null && custPrice.dry_clean !== '') item.dry_clean = parseFloat(custPrice.dry_clean) || 0;
-        if (custPrice.wash_press != null && custPrice.wash_press !== '') item.wash_press = parseFloat(custPrice.wash_press) || 0;
-        if (custPrice.wash_dry != null && custPrice.wash_dry !== '') item.wash_dry = parseFloat(custPrice.wash_dry) || 0;
+        item.dry_clean = (custPrice.dry_clean != null && custPrice.dry_clean !== '') ? parseFloat(custPrice.dry_clean) : (catItem.dry_clean_price || 0);
+        item.wash_press = (custPrice.wash_press != null && custPrice.wash_press !== '') ? parseFloat(custPrice.wash_press) : (catItem.wash_press_price || 0);
+        item.wash_dry = (custPrice.wash_dry != null && custPrice.wash_dry !== '') ? parseFloat(custPrice.wash_dry) : (catItem.wash_dry_price || 0);
+      } else {
+        item.dry_clean = catItem.dry_clean_price || 0;
+        item.wash_press = catItem.wash_press_price || 0;
+        item.wash_dry = catItem.wash_dry_price || 0;
       }
     }
   });
@@ -679,6 +689,7 @@ async function onQuotationDateChange(dateStr) {
 function _renderQuotationModalItemRows() {
   return currentQuotationItems.map((item, idx) => `
     <tr style="border-bottom:1px solid var(--border);">
+      <td style="text-align:center;padding:6px;font-weight:600;color:var(--text-muted);">${idx + 1}</td>
       <td style="text-align:center;padding:6px;">
         <input type="checkbox" ${item.included ? 'checked' : ''} onchange="currentQuotationItems[${idx}].included=this.checked"/>
       </td>
@@ -686,13 +697,13 @@ function _renderQuotationModalItemRows() {
         <input class="form-input" value="${item.name.replace(/"/g, '&quot;')}" style="padding:4px 8px;font-size:0.9em;" onchange="currentQuotationItems[${idx}].name=this.value"/>
       </td>
       <td style="padding:6px;text-align:right;">
-        <input type="number" step="0.01" min="0" class="form-input" value="${item.dry_clean || ''}" placeholder="0.00" style="padding:4px 8px;text-align:right;font-size:0.9em;" onchange="currentQuotationItems[${idx}].dry_clean=parseFloat(this.value)||0"/>
+        <input type="number" step="1" min="0" class="form-input" value="${item.dry_clean || ''}" placeholder="0" style="padding:4px 8px;text-align:right;font-size:0.9em;" onchange="currentQuotationItems[${idx}].dry_clean=parseFloat(this.value)||0"/>
       </td>
       <td style="padding:6px;text-align:right;">
-        <input type="number" step="0.01" min="0" class="form-input" value="${item.wash_press || ''}" placeholder="0.00" style="padding:4px 8px;text-align:right;font-size:0.9em;" onchange="currentQuotationItems[${idx}].wash_press=parseFloat(this.value)||0"/>
+        <input type="number" step="1" min="0" class="form-input" value="${item.wash_press || ''}" placeholder="0" style="padding:4px 8px;text-align:right;font-size:0.9em;" onchange="currentQuotationItems[${idx}].wash_press=parseFloat(this.value)||0"/>
       </td>
       <td style="padding:6px;text-align:right;">
-        <input type="number" step="0.01" min="0" class="form-input" value="${item.wash_dry || ''}" placeholder="0.00" style="padding:4px 8px;text-align:right;font-size:0.9em;" onchange="currentQuotationItems[${idx}].wash_dry=parseFloat(this.value)||0"/>
+        <input type="number" step="1" min="0" class="form-input" value="${item.wash_dry || ''}" placeholder="0" style="padding:4px 8px;text-align:right;font-size:0.9em;" onchange="currentQuotationItems[${idx}].wash_dry=parseFloat(this.value)||0"/>
       </td>
       <td style="text-align:center;padding:6px;">
         <button class="btn btn-danger btn-sm" onclick="removeQuotationModalItemRow(${idx})" style="padding:3px 7px;"><i class="fas fa-trash"></i></button>
@@ -785,6 +796,7 @@ async function renderQuotationView(quoteData) {
 
   const rowsHTML = (quoteData.items || []).map((item, idx) => `
     <tr style="background:${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+      <td style="padding:7px 12px;border-bottom:1px solid #e2e8f0;font-size:0.88em;font-weight:600;text-align:center;color:#64748b;">${idx + 1}</td>
       <td style="padding:7px 12px;border-bottom:1px solid #e2e8f0;font-size:0.88em;font-weight:600;color:#1e293b;">${item.name}</td>
       <td style="padding:7px 12px;border-bottom:1px solid #e2e8f0;text-align:right;font-size:0.88em;font-weight:600;color:#7c3aed;">${item.dry_clean > 0 ? formatCurrency(item.dry_clean) : '—'}</td>
       <td style="padding:7px 12px;border-bottom:1px solid #e2e8f0;text-align:right;font-size:0.88em;font-weight:600;color:#0369a1;">${item.wash_press > 0 ? formatCurrency(item.wash_press) : '—'}</td>
@@ -793,7 +805,7 @@ async function renderQuotationView(quoteData) {
   `).join('');
 
   const notesLines = (quoteData.footer_notes || '').split('\n').filter(l => l.trim() !== '');
-  const notesHTML = notesLines.map(line => `<li>${line.replace(/^-\s*/, '')}</li>`).join('');
+  const notesHTML = notesLines.map(line => `<li style="margin-bottom:4px;">${line.replace(/^-\s*/, '')}</li>`).join('');
 
   const quotationHTML = `
     <div id="quotation-print-area" style="position:relative;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;max-width:780px;margin:0 auto;padding:36px 40px;border-radius:4px;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
@@ -831,6 +843,7 @@ async function renderQuotationView(quoteData) {
       <table style="width:100%;border-collapse:collapse;margin-bottom:28px;border:1px solid #e2e8f0;">
         <thead>
           <tr style="background:#1a4d8f;color:#fff;">
+            <th rowspan="2" style="padding:10px 12px;text-align:center;font-size:0.82em;text-transform:uppercase;letter-spacing:0.8px;width:45px;">No</th>
             <th rowspan="2" style="padding:10px 12px;text-align:left;font-size:0.82em;text-transform:uppercase;letter-spacing:0.8px;">Items</th>
             <th colspan="3" style="padding:8px 12px;text-align:center;font-size:0.82em;text-transform:uppercase;letter-spacing:0.8px;border-left:1px solid rgba(255,255,255,0.2);">Price (LKR)</th>
           </tr>
@@ -848,17 +861,16 @@ async function renderQuotationView(quoteData) {
       <!-- FOOTER NOTES -->
       <div style="background:#f1f5f9;border-left:4px solid #1a4d8f;padding:14px 18px;border-radius:0 8px 8px 0;margin-bottom:28px;font-size:0.86em;color:#334155;line-height:1.6;">
         <div style="font-weight:700;margin-bottom:6px;color:#1e293b;text-transform:uppercase;font-size:0.8em;letter-spacing:0.5px;">Notes &amp; Terms:</div>
-        <ul style="margin:0;padding-left:18px;">
+        <ul style="margin:0;padding-left:22px;list-style-type:disc;">
           ${notesHTML}
         </ul>
       </div>
 
       <!-- ISSUED BY / SIGNATURE BLOCK -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:36px;margin-bottom:20px;padding-top:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:40px;margin-bottom:20px;padding-top:10px;">
         <div>
-          <div style="font-size:0.88em;color:#475569;margin-bottom:4px;">Issued by: <strong style="color:#1e293b;">${quoteData.issued_by || 'Manager - Sagacious Washing Center'}</strong></div>
-          <div style="margin-top:24px;border-bottom:1.5px dotted #64748b;width:220px;"></div>
-          <div style="font-size:0.75em;color:#94a3b8;margin-top:4px;">Authorized Signature</div>
+          <div style="border-bottom:1.5px dotted #64748b;width:220px;margin-bottom:8px;"></div>
+          <div style="font-size:0.88em;font-weight:600;color:#1e293b;">${quoteData.issued_by || 'Manager - Sagacious Washing Center'}</div>
         </div>
       </div>
 
