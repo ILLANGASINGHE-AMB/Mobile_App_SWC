@@ -531,10 +531,68 @@ const DB = {
         { key: 'dark_mode', value: 'false' },
         { key: 'text_size', value: 'md' },
         { key: 'min_discount_amount', value: '30000' },
-        { key: 'delivery_charge', value: '0' }
+        { key: 'delivery_charge', value: '0' },
+        { key: 'quotation_terms', value: '- Free pick-up and delivery for orders exceeding Rs 3,000.00\n- Contact instruction for pricing queries' }
       ];
       for (const s of defaults) await DB.setSetting(s.key, s.value);
     }
+  },
+
+  // ── Quotations ─────────────────────────────
+  async getQuotations() {
+    try {
+      const val = await DB.getSetting('quotation_history');
+      return val ? JSON.parse(val) : [];
+    } catch(e) {
+      console.error('Error reading quotation history:', e);
+      return [];
+    }
+  },
+  async saveQuotation(quoteData) {
+    try {
+      const history = await DB.getQuotations();
+      const existingIdx = history.findIndex(q => q.quote_id === quoteData.quote_id);
+      if (existingIdx >= 0) {
+        history[existingIdx] = quoteData;
+      } else {
+        history.unshift(quoteData);
+      }
+      await DB.setSetting('quotation_history', JSON.stringify(history));
+      return quoteData;
+    } catch(e) {
+      console.error('Error saving quotation:', e);
+    }
+  },
+  async deleteQuotation(quoteId) {
+    try {
+      const history = await DB.getQuotations();
+      const filtered = history.filter(q => q.quote_id !== quoteId);
+      await DB.setSetting('quotation_history', JSON.stringify(filtered));
+    } catch(e) {
+      console.error('Error deleting quotation:', e);
+    }
+  },
+  async getQuotation(quoteId) {
+    const history = await DB.getQuotations();
+    return history.find(q => q.quote_id === quoteId) || null;
+  },
+  async generateQuotationId(dateStr) {
+    const dateObj = dateStr ? new Date(dateStr) : new Date();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const yy = String(dateObj.getFullYear()).slice(-2);
+    const suffix = `${mm}${yy}`;
+    
+    const history = await DB.getQuotations();
+    let maxSeq = 0;
+    history.forEach(q => {
+      if (q.quote_id && q.quote_id.startsWith('QUO-') && q.quote_id.endsWith(suffix)) {
+        const seqStr = q.quote_id.slice(4, 7);
+        const seq = parseInt(seqStr, 10) || 0;
+        if (seq > maxSeq) maxSeq = seq;
+      }
+    });
+    const nextSeq = String(maxSeq + 1).padStart(3, '0');
+    return `QUO-${nextSeq}${mm}${yy}`;
   },
 
   // ── Recent System Actions ─────────────────

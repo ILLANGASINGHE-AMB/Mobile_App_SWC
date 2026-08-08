@@ -12,13 +12,18 @@ function clearItemsCache() {}
 
 async function renderItems() {
   document.getElementById('page-title').textContent = 'Items';
-  if (document.getElementById('items-table-body')) { await _refreshItemsTable(); return; }
+  if (document.getElementById('items-table-body')) {
+    await _refreshItemsTable();
+    await _refreshQuotationsHistoryTable();
+    return;
+  }
 
   document.getElementById('content').innerHTML = `
     <div class="section-header">
       <span class="section-title">Items Catalog</span>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="showGenerateQuotationModal()"><i class="fas fa-file-invoice"></i> Generate Quotation</button>
+        <button class="btn btn-secondary" onclick="showDefaultTermsModal()"><i class="fas fa-file-contract"></i> Terms &amp; Conditions</button>
         ${isAdmin()?'<button class="btn btn-secondary" onclick="printItemsCatalog()"><i class="fas fa-print"></i> Print Catalog</button>':''}
         ${isAdmin()?'<button class="btn btn-secondary" onclick="exportItems()"><i class="fas fa-download"></i> Backup</button>':''}
         ${isAdmin()?'<button class="btn btn-secondary" onclick="document.getElementById(\'items-import-file\').click()"><i class="fas fa-upload"></i> Import</button>':''}
@@ -54,9 +59,32 @@ async function renderItems() {
         </table>
       </div>
       <div id="items-pagination" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);"></div>
+    </div>
+
+    <!-- QUOTATIONS GENERATED HISTORY SECTION -->
+    <div class="card" style="margin-top:28px;">
+      <div class="section-header" style="margin-bottom:14px;">
+        <span class="section-title" style="font-size:1.1em;"><i class="fas fa-history"></i> Quotations Generated History</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px;">No</th>
+              <th>Quotation ID</th>
+              <th>Customer Name</th>
+              <th>Issued Date</th>
+              <th>Valid Until</th>
+              <th style="text-align:right;width:220px;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="quotations-history-table-body"></tbody>
+        </table>
+      </div>
     </div>`;
   await _refreshItemsTable();
-  document.getElementById('items-search-input').focus();
+  await _refreshQuotationsHistoryTable();
+  document.getElementById('items-search-input')?.focus();
 }
 
 async function _refreshItemsTable() {
@@ -356,6 +384,85 @@ async function importItems(input) {
 }
 
 // ─────────────────────────────────────────────
+// DEFAULT TERMS & CONDITIONS MODAL
+// ─────────────────────────────────────────────
+async function showDefaultTermsModal() {
+  const currentTerms = await DB.getSetting('quotation_terms') || 
+    "- Free pick-up and delivery for orders exceeding Rs 3,000.00\n- Contact instruction for pricing queries";
+
+  createModal('default-terms-modal', 'Default Terms & Conditions (Quotation Footer Notes)', `
+    <div class="form-group">
+      <label class="form-label">Default Terms and Conditions *</label>
+      <textarea class="form-input" id="dt-terms" rows="6" style="font-family:inherit;line-height:1.5;">${currentTerms}</textarea>
+      <span style="font-size:0.8em;color:var(--text-muted);margin-top:6px;display:block;">This text will be used as the default FOOTER NOTES when generating any new service quotation. Users can also edit it per quotation.</span>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+      <button class="btn btn-secondary" onclick="hideModal('default-terms-modal')">Cancel [Esc]</button>
+      <button class="btn btn-primary" onclick="saveDefaultTerms()"><i class="fas fa-save"></i> Save Terms [Enter]</button>
+    </div>
+  `, 'modal-md');
+  showModal('default-terms-modal');
+}
+
+async function saveDefaultTerms() {
+  const text = document.getElementById('dt-terms').value.trim();
+  await DB.setSetting('quotation_terms', text);
+  hideModal('default-terms-modal');
+  toast('Default Terms & Conditions saved!');
+}
+
+// ─────────────────────────────────────────────
+// QUOTATIONS GENERATED HISTORY
+// ─────────────────────────────────────────────
+async function _refreshQuotationsHistoryTable() {
+  const tbody = document.getElementById('quotations-history-table-body');
+  if (!tbody) return;
+  const history = await DB.getQuotations();
+  if (!history || history.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:1.8em;margin-bottom:6px;">📄</div>No quotations generated yet</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = history.map((q, idx) => `
+    <tr>
+      <td><span style="font-weight:600;color:var(--text-muted);">${idx + 1}</span></td>
+      <td><span style="font-family:monospace;font-weight:700;color:var(--primary);background:var(--bg);padding:3px 8px;border-radius:4px;border:1px solid var(--border);">${q.quote_id}</span></td>
+      <td><strong>${q.customer_name || 'General Client'}</strong></td>
+      <td>${q.issued_date || '—'}</td>
+      <td>${q.valid_until || '—'}</td>
+      <td style="text-align:right;">
+        <div style="display:flex;gap:6px;justify-content:flex-end;">
+          <button class="btn btn-secondary btn-sm" onclick="viewQuotationFromHistory('${q.quote_id}')" title="View"><i class="fas fa-eye"></i> View</button>
+          <button class="btn btn-primary btn-sm" onclick="printQuotationFromHistory('${q.quote_id}')" title="Print"><i class="fas fa-print"></i> Print</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteQuotationFromHistory('${q.quote_id}')" title="Delete"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function viewQuotationFromHistory(quoteId) {
+  const q = await DB.getQuotation(quoteId);
+  if (!q) return toast('Quotation not found', 'error');
+  renderQuotationView(q);
+}
+
+async function printQuotationFromHistory(quoteId) {
+  const q = await DB.getQuotation(quoteId);
+  if (!q) return toast('Quotation not found', 'error');
+  await renderQuotationView(q);
+  printQuotationView();
+}
+
+async function deleteQuotationFromHistory(quoteId) {
+  confirmDialog(`Delete quotation "${quoteId}" from history?`, async () => {
+    await DB.deleteQuotation(quoteId);
+    await DB.logAction('Delete Quotation', `Deleted quotation ${quoteId}`, { quote_id: quoteId }, 'Quotation');
+    toast('Quotation deleted from history');
+    await _refreshQuotationsHistoryTable();
+  });
+}
+
+// ─────────────────────────────────────────────
 // CUSTOMER QUOTATION GENERATOR
 // ─────────────────────────────────────────────
 
@@ -415,68 +522,255 @@ const QUOTATION_ITEM_ORDER = [
   "Overall"
 ];
 
+let currentQuotationItems = [];
+
 async function showGenerateQuotationModal() {
-  const customers = await DB.getCustomers();
+  const [customers, allCatalogItems, defaultTerms] = await Promise.all([
+    DB.getCustomers(),
+    DB.getItems(),
+    DB.getSetting('quotation_terms')
+  ]);
   const sortedCust = customers.sort((a,b)=>(a.hotel_name||'').localeCompare(b.hotel_name||''));
   
   const todayStr = new Date().toISOString().slice(0,10);
   const validUntilStr = new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0,10);
-  const defaultQuoteId = 'QT-' + new Date().getFullYear() + String(new Date().getMonth()+1).padStart(2,'0') + String(new Date().getDate()).padStart(2,'0') + '-' + String(Math.floor(Math.random()*900)+100);
+  const initialQuoteId = await DB.generateQuotationId(todayStr);
 
-  const custOptions = `<option value="">-- Standard Catalog (General Customer) --</option>` +
+  const custOptions = `<option value="">-- Custom Client / Any Client --</option>` +
     sortedCust.map(c => `<option value="${c.id}">${c.hotel_name}${c.contact_person ? ' (' + c.contact_person + ')' : ''}</option>`).join('');
 
-  createModal('gen-quotation-modal', 'Generate Customer Quotation', `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div class="form-group" style="grid-column:1/-1;">
-        <label class="form-label">Select Customer *</label>
-        <select class="form-input" id="gq-customer-id">
+  // Normalize catalog items map
+  const catalogMap = {};
+  const normalize = name => (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  allCatalogItems.forEach(i => catalogMap[normalize(i.item_name)] = i);
+
+  // Build combined item names list preserving standard order
+  const itemNamesSet = new Set(QUOTATION_ITEM_ORDER);
+  allCatalogItems.forEach(i => itemNamesSet.add(i.item_name));
+
+  currentQuotationItems = Array.from(itemNamesSet).map((name, idx) => {
+    const norm = normalize(name);
+    const catItem = catalogMap[norm] || allCatalogItems.find(i => normalize(i.item_name).includes(norm) || norm.includes(normalize(i.item_name)));
+    return {
+      id: idx + 1,
+      name: name,
+      catalog_id: catItem ? catItem.id : null,
+      included: true,
+      dry_clean: catItem ? (catItem.dry_clean_price || 0) : 0,
+      wash_press: catItem ? (catItem.wash_press_price || 0) : 0,
+      wash_dry: catItem ? (catItem.wash_dry_price || 0) : 0
+    };
+  });
+
+  const termsText = defaultTerms || "- Free pick-up and delivery for orders exceeding Rs 3,000.00\n- Contact instruction for pricing queries";
+
+  createModal('gen-quotation-modal', 'Generate Service Quotation', `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+      <div class="form-group">
+        <label class="form-label">Select Saved Customer</label>
+        <select class="form-input" id="gq-customer-id" onchange="onQuotationCustomerChange(this.value)">
           ${custOptions}
         </select>
-        <span style="font-size:0.8em;color:var(--text-muted);margin-top:4px;display:block;">If the customer has a specific price list configured, custom prices will be used.</span>
       </div>
       <div class="form-group">
-        <label class="form-label">Quote ID *</label>
-        <input class="form-input" id="gq-quote-id" value="${defaultQuoteId}"/>
+        <label class="form-label">Client Name * (Editable for Any Client)</label>
+        <input class="form-input" id="gq-client-name" placeholder="e.g. Walk-in Client / Hotel Name" value=""/>
       </div>
       <div class="form-group">
-        <label class="form-label">Date *</label>
-        <input type="date" class="form-input" id="gq-date" value="${todayStr}"/>
+        <label class="form-label">Quotation ID *</label>
+        <input class="form-input" id="gq-quote-id" value="${initialQuoteId}"/>
       </div>
-      <div class="form-group" style="grid-column:1/-1;">
+      <div class="form-group">
+        <label class="form-label">Issued Date *</label>
+        <input type="date" class="form-input" id="gq-date" value="${todayStr}" onchange="onQuotationDateChange(this.value)"/>
+      </div>
+      <div class="form-group">
         <label class="form-label">Valid Until *</label>
         <input type="date" class="form-input" id="gq-valid-until" value="${validUntilStr}"/>
       </div>
+      <div class="form-group">
+        <label class="form-label">Issued By (Name &amp; Designation)</label>
+        <input class="form-input" id="gq-issued-by" placeholder="e.g. Manager - SWC" value="Manager - Sagacious Washing Center"/>
+      </div>
     </div>
+
+    <!-- ITEMS & PRICING TABLE -->
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <label class="form-label" style="font-weight:700;font-size:0.95em;margin:0;">Item Prices &amp; Selection (LKR)</label>
+          <span style="font-size:0.78em;color:var(--text-muted);display:block;">Check/uncheck items or edit prices specifically for this quotation.</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="addCustomQuotationItemRow()"><i class="fas fa-plus"></i> Add Item Row</button>
+      </div>
+      <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.85em;">
+          <thead style="position:sticky;top:0;background:var(--card-bg);z-index:2;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+            <tr style="border-bottom:1px solid var(--border);background:var(--bg);">
+              <th style="padding:8px;text-align:center;width:40px;">Inc.</th>
+              <th style="padding:8px;text-align:left;">Item Name</th>
+              <th style="padding:8px;text-align:right;width:110px;">Dry Clean</th>
+              <th style="padding:8px;text-align:right;width:110px;">Wash &amp; Press</th>
+              <th style="padding:8px;text-align:right;width:110px;">Wash &amp; Dry</th>
+              <th style="padding:8px;text-align:center;width:45px;"></th>
+            </tr>
+          </thead>
+          <tbody id="gq-items-tbody">
+            ${_renderQuotationModalItemRows()}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FOOTER NOTES EDITOR -->
+    <div style="margin-top:16px;">
+      <label class="form-label">Footer Notes &amp; Terms (Editable per quotation)</label>
+      <textarea class="form-input" id="gq-footer-notes" rows="3" style="font-family:inherit;font-size:0.88em;">${termsText}</textarea>
+    </div>
+
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:14px;border-top:1px solid var(--border);">
       <button class="btn btn-secondary" onclick="hideModal('gen-quotation-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="processGenerateQuotation()"><i class="fas fa-file-invoice"></i> Generate &amp; Preview</button>
+      <button class="btn btn-primary" onclick="processGenerateQuotation()"><i class="fas fa-file-invoice"></i> Save &amp; Preview Quotation</button>
     </div>
-  `, 'modal-md');
+  `, 'modal-xl');
   showModal('gen-quotation-modal');
+}
+
+async function onQuotationCustomerChange(custId) {
+  const clientInput = document.getElementById('gq-client-name');
+  if (!custId) {
+    if (clientInput) clientInput.value = '';
+    return;
+  }
+  const customer = await DB.getCustomer(custId);
+  if (!customer) return;
+  if (clientInput) clientInput.value = customer.hotel_name || '';
+
+  const customPrices = customer.custom_prices || {};
+  const allCatalogItems = await DB.getItems();
+  const normalize = name => (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const catalogMap = {};
+  allCatalogItems.forEach(i => catalogMap[normalize(i.item_name)] = i);
+
+  currentQuotationItems.forEach(item => {
+    const catItem = item.catalog_id ? allCatalogItems.find(i => i.id === item.catalog_id) : catalogMap[normalize(item.name)];
+    if (catItem) {
+      const custPrice = customPrices[catItem.id];
+      if (custPrice) {
+        if (custPrice.dry_clean != null && custPrice.dry_clean !== '') item.dry_clean = parseFloat(custPrice.dry_clean) || 0;
+        if (custPrice.wash_press != null && custPrice.wash_press !== '') item.wash_press = parseFloat(custPrice.wash_press) || 0;
+        if (custPrice.wash_dry != null && custPrice.wash_dry !== '') item.wash_dry = parseFloat(custPrice.wash_dry) || 0;
+      }
+    }
+  });
+
+  const tbody = document.getElementById('gq-items-tbody');
+  if (tbody) tbody.innerHTML = _renderQuotationModalItemRows();
+}
+
+async function onQuotationDateChange(dateStr) {
+  const quoteIdInput = document.getElementById('gq-quote-id');
+  if (quoteIdInput && dateStr) {
+    const newQuoteId = await DB.generateQuotationId(dateStr);
+    quoteIdInput.value = newQuoteId;
+  }
+}
+
+function _renderQuotationModalItemRows() {
+  return currentQuotationItems.map((item, idx) => `
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="text-align:center;padding:6px;">
+        <input type="checkbox" ${item.included ? 'checked' : ''} onchange="currentQuotationItems[${idx}].included=this.checked"/>
+      </td>
+      <td style="padding:6px;">
+        <input class="form-input" value="${item.name.replace(/"/g, '&quot;')}" style="padding:4px 8px;font-size:0.9em;" onchange="currentQuotationItems[${idx}].name=this.value"/>
+      </td>
+      <td style="padding:6px;text-align:right;">
+        <input type="number" step="0.01" min="0" class="form-input" value="${item.dry_clean || ''}" placeholder="0.00" style="padding:4px 8px;text-align:right;font-size:0.9em;" onchange="currentQuotationItems[${idx}].dry_clean=parseFloat(this.value)||0"/>
+      </td>
+      <td style="padding:6px;text-align:right;">
+        <input type="number" step="0.01" min="0" class="form-input" value="${item.wash_press || ''}" placeholder="0.00" style="padding:4px 8px;text-align:right;font-size:0.9em;" onchange="currentQuotationItems[${idx}].wash_press=parseFloat(this.value)||0"/>
+      </td>
+      <td style="padding:6px;text-align:right;">
+        <input type="number" step="0.01" min="0" class="form-input" value="${item.wash_dry || ''}" placeholder="0.00" style="padding:4px 8px;text-align:right;font-size:0.9em;" onchange="currentQuotationItems[${idx}].wash_dry=parseFloat(this.value)||0"/>
+      </td>
+      <td style="text-align:center;padding:6px;">
+        <button class="btn btn-danger btn-sm" onclick="removeQuotationModalItemRow(${idx})" style="padding:3px 7px;"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function removeQuotationModalItemRow(idx) {
+  currentQuotationItems.splice(idx, 1);
+  const tbody = document.getElementById('gq-items-tbody');
+  if (tbody) tbody.innerHTML = _renderQuotationModalItemRows();
+}
+
+function addCustomQuotationItemRow() {
+  currentQuotationItems.push({
+    id: Date.now(),
+    name: 'New Custom Item',
+    catalog_id: null,
+    included: true,
+    dry_clean: 0,
+    wash_press: 0,
+    wash_dry: 0
+  });
+  const tbody = document.getElementById('gq-items-tbody');
+  if (tbody) tbody.innerHTML = _renderQuotationModalItemRows();
 }
 
 async function processGenerateQuotation() {
   const custId = document.getElementById('gq-customer-id').value;
-  const quoteId = document.getElementById('gq-quote-id').value.trim() || 'QT-001';
+  const clientName = document.getElementById('gq-client-name').value.trim() || 'General Client';
+  const quoteId = document.getElementById('gq-quote-id').value.trim() || 'QUO-0010826';
   const rawDate = document.getElementById('gq-date').value;
   const rawValidUntil = document.getElementById('gq-valid-until').value;
+  const footerNotes = document.getElementById('gq-footer-notes').value.trim();
+  const issuedBy = document.getElementById('gq-issued-by').value.trim();
 
   const quoteDate = formatDate(rawDate);
   const validUntil = formatDate(rawValidUntil);
 
-  let customer = null;
-  if (custId) {
-    customer = await DB.getCustomer(custId);
+  // Filter only included items
+  const includedItems = currentQuotationItems.filter(i => i.included && i.name.trim() !== '').map(i => ({
+    name: i.name.trim(),
+    dry_clean: parseFloat(i.dry_clean) || 0,
+    wash_press: parseFloat(i.wash_press) || 0,
+    wash_dry: parseFloat(i.wash_dry) || 0
+  }));
+
+  if (includedItems.length === 0) {
+    return toast('Please include at least one item in the quotation', 'error');
   }
 
+  const quoteData = {
+    quote_id: quoteId,
+    customer_id: custId || null,
+    customer_name: clientName,
+    issued_date: quoteDate,
+    raw_date: rawDate,
+    valid_until: validUntil,
+    raw_valid_until: rawValidUntil,
+    footer_notes: footerNotes,
+    issued_by: issuedBy,
+    items: includedItems,
+    created_at: new Date().toISOString()
+  };
+
+  await DB.saveQuotation(quoteData);
+  await DB.logAction('Generate Quotation', `Generated quotation ${quoteId} for ${clientName}`, { quote_id: quoteId, client: clientName }, 'Quotation');
+
   hideModal('gen-quotation-modal');
-  await renderQuotationView(customer, quoteId, quoteDate, validUntil);
+  toast(`Quotation ${quoteId} generated!`);
+  
+  await _refreshQuotationsHistoryTable();
+  await renderQuotationView(quoteData);
 }
 
-async function renderQuotationView(customer, quoteId, quoteDate, validUntil) {
-  const [allItems, companyName, logoData, address, phone, email] = await Promise.all([
-    DB.getItems(),
+async function renderQuotationView(quoteData) {
+  const [companyName, logoData, address, phone, email] = await Promise.all([
     DB.getSetting('company_name'),
     DB.getSetting('logo_data'),
     DB.getSetting('address'),
@@ -489,57 +783,17 @@ async function renderQuotationView(customer, quoteId, quoteDate, validUntil) {
     ? `<img src="${logoData}" style="height:56px;width:auto;object-fit:contain;border-radius:8px;"/>`
     : `<div style="height:56px;width:56px;border-radius:8px;background:linear-gradient(135deg,#00b4d8,#1a4d8f);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4em;font-weight:700;">SW</div>`;
 
-  const customPrices = customer?.custom_prices || {};
-
-  const normalize = name => (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-  const catalogMap = {};
-  allItems.forEach(item => {
-    catalogMap[normalize(item.item_name)] = item;
-  });
-
-  const resolvedItems = QUOTATION_ITEM_ORDER.map(reqName => {
-    const normReq = normalize(reqName);
-    let match = catalogMap[normReq];
-
-    if (!match) {
-      match = allItems.find(i => {
-        const normItem = normalize(i.item_name);
-        return normItem.includes(normReq) || normReq.includes(normItem);
-      });
-    }
-
-    let resolvedPrice = null;
-
-    if (match) {
-      const custPrice = customPrices[match.id];
-
-      let dc = (custPrice && custPrice.dry_clean != null && custPrice.dry_clean !== '') ? parseFloat(custPrice.dry_clean) : (match.dry_clean_price || 0);
-      let wp = (custPrice && custPrice.wash_press != null && custPrice.wash_press !== '') ? parseFloat(custPrice.wash_press) : (match.wash_press_price || 0);
-      let wd = (custPrice && custPrice.wash_dry != null && custPrice.wash_dry !== '') ? parseFloat(custPrice.wash_dry) : (match.wash_dry_price || 0);
-
-      const nameLower = reqName.toLowerCase();
-      if (nameLower.includes('dry clean') || nameLower.includes('dry-clean')) {
-        resolvedPrice = dc || wp || wd || 0;
-      } else {
-        resolvedPrice = wp || dc || wd || 0;
-      }
-    }
-
-    return {
-      name: reqName,
-      price: resolvedPrice
-    };
-  });
-
-  const rowsHTML = resolvedItems.map((item, idx) => `
+  const rowsHTML = (quoteData.items || []).map((item, idx) => `
     <tr style="background:${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
       <td style="padding:7px 12px;border-bottom:1px solid #e2e8f0;font-size:0.88em;font-weight:600;color:#1e293b;">${item.name}</td>
-      <td style="padding:7px 12px;border-bottom:1px solid #e2e8f0;text-align:right;font-size:0.88em;font-weight:700;color:#1a4d8f;">${item.price !== null && item.price > 0 ? formatCurrency(item.price) : '—'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #e2e8f0;text-align:right;font-size:0.88em;font-weight:600;color:#7c3aed;">${item.dry_clean > 0 ? formatCurrency(item.dry_clean) : '—'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #e2e8f0;text-align:right;font-size:0.88em;font-weight:600;color:#0369a1;">${item.wash_press > 0 ? formatCurrency(item.wash_press) : '—'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid #e2e8f0;text-align:right;font-size:0.88em;font-weight:600;color:#16a34a;">${item.wash_dry > 0 ? formatCurrency(item.wash_dry) : '—'}</td>
     </tr>
   `).join('');
 
-  const customerName = customer ? customer.hotel_name : '';
+  const notesLines = (quoteData.footer_notes || '').split('\n').filter(l => l.trim() !== '');
+  const notesHTML = notesLines.map(line => `<li>${line.replace(/^-\s*/, '')}</li>`).join('');
 
   const quotationHTML = `
     <div id="quotation-print-area" style="position:relative;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;max-width:780px;margin:0 auto;padding:36px 40px;border-radius:4px;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
@@ -564,21 +818,26 @@ async function renderQuotationView(customer, quoteId, quoteDate, validUntil) {
       <!-- HEADER SECTION -->
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin-bottom:24px;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.9em;">
         <div>
-          <div style="margin-bottom:6px;"><strong style="color:#64748b;display:inline-block;width:130px;">Customer Name :</strong> <span style="font-weight:700;color:#1e293b;">${customerName}</span></div>
-          <div><strong style="color:#64748b;display:inline-block;width:130px;">Date :</strong> <span style="font-weight:600;color:#1e293b;">${quoteDate}</span></div>
+          <div style="margin-bottom:6px;"><strong style="color:#64748b;display:inline-block;width:130px;">Customer Name :</strong> <span style="font-weight:700;color:#1e293b;">${quoteData.customer_name || 'General Client'}</span></div>
+          <div><strong style="color:#64748b;display:inline-block;width:130px;">Issued Date :</strong> <span style="font-weight:600;color:#1e293b;">${quoteData.issued_date}</span></div>
         </div>
         <div>
-          <div style="margin-bottom:6px;"><strong style="color:#64748b;display:inline-block;width:110px;">Quote ID :</strong> <span style="font-weight:700;color:#1a4d8f;font-family:monospace;letter-spacing:0.5px;">${quoteId}</span></div>
-          <div><strong style="color:#64748b;display:inline-block;width:110px;">Valid Until :</strong> <span style="font-weight:600;color:#1e293b;">${validUntil}</span></div>
+          <div style="margin-bottom:6px;"><strong style="color:#64748b;display:inline-block;width:110px;">Quote ID :</strong> <span style="font-weight:700;color:#1a4d8f;font-family:monospace;letter-spacing:0.5px;">${quoteData.quote_id}</span></div>
+          <div><strong style="color:#64748b;display:inline-block;width:110px;">Valid Until :</strong> <span style="font-weight:600;color:#1e293b;">${quoteData.valid_until}</span></div>
         </div>
       </div>
 
       <!-- PRICING TABLE -->
-      <table style="width:100%;border-collapse:collapse;margin-bottom:28px;">
+      <table style="width:100%;border-collapse:collapse;margin-bottom:28px;border:1px solid #e2e8f0;">
         <thead>
           <tr style="background:#1a4d8f;color:#fff;">
-            <th style="padding:10px 12px;text-align:left;font-size:0.82em;text-transform:uppercase;letter-spacing:0.8px;">Item</th>
-            <th style="padding:10px 12px;text-align:right;font-size:0.82em;text-transform:uppercase;letter-spacing:0.8px;">Amount</th>
+            <th rowspan="2" style="padding:10px 12px;text-align:left;font-size:0.82em;text-transform:uppercase;letter-spacing:0.8px;">Items</th>
+            <th colspan="3" style="padding:8px 12px;text-align:center;font-size:0.82em;text-transform:uppercase;letter-spacing:0.8px;border-left:1px solid rgba(255,255,255,0.2);">Price (LKR)</th>
+          </tr>
+          <tr style="background:#1e3a6e;color:#fff;">
+            <th style="padding:6px 10px;text-align:right;font-size:0.75em;text-transform:uppercase;border-left:1px solid rgba(255,255,255,0.2);">Dry Clean</th>
+            <th style="padding:6px 10px;text-align:right;font-size:0.75em;text-transform:uppercase;">Wash &amp; Press</th>
+            <th style="padding:6px 10px;text-align:right;font-size:0.75em;text-transform:uppercase;">Wash &amp; Dry</th>
           </tr>
         </thead>
         <tbody>
@@ -587,22 +846,30 @@ async function renderQuotationView(customer, quoteId, quoteDate, validUntil) {
       </table>
 
       <!-- FOOTER NOTES -->
-      <div style="background:#f1f5f9;border-left:4px solid #1a4d8f;padding:14px 18px;border-radius:0 8px 8px 0;margin-bottom:24px;font-size:0.86em;color:#334155;line-height:1.6;">
-        <div style="font-weight:700;margin-bottom:4px;color:#1e293b;text-transform:uppercase;font-size:0.8em;letter-spacing:0.5px;">Notes &amp; Terms:</div>
+      <div style="background:#f1f5f9;border-left:4px solid #1a4d8f;padding:14px 18px;border-radius:0 8px 8px 0;margin-bottom:28px;font-size:0.86em;color:#334155;line-height:1.6;">
+        <div style="font-weight:700;margin-bottom:6px;color:#1e293b;text-transform:uppercase;font-size:0.8em;letter-spacing:0.5px;">Notes &amp; Terms:</div>
         <ul style="margin:0;padding-left:18px;">
-          <li>Free pick-up and delivery for orders exceeding Rs 3,000.00</li>
-          <li>For pricing queries or custom arrangements, please contact us at ${phone || email || 'our office'}.</li>
+          ${notesHTML}
         </ul>
       </div>
 
+      <!-- ISSUED BY / SIGNATURE BLOCK -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:36px;margin-bottom:20px;padding-top:10px;">
+        <div>
+          <div style="font-size:0.88em;color:#475569;margin-bottom:4px;">Issued by: <strong style="color:#1e293b;">${quoteData.issued_by || 'Manager - Sagacious Washing Center'}</strong></div>
+          <div style="margin-top:24px;border-bottom:1.5px dotted #64748b;width:220px;"></div>
+          <div style="font-size:0.75em;color:#94a3b8;margin-top:4px;">Authorized Signature</div>
+        </div>
+      </div>
+
       <!-- CLOSING LINE -->
-      <div style="text-align:center;font-family:'Playfair Display',serif;font-size:1.05em;font-weight:700;color:#1a4d8f;margin-top:20px;padding-top:14px;border-top:1px solid #e2e8f0;">
+      <div style="text-align:center;font-family:'Playfair Display',serif;font-size:1.05em;font-weight:700;color:#1a4d8f;margin-top:24px;padding-top:14px;border-top:1px solid #e2e8f0;">
         Thank You for choosing ${company}!
       </div>
     </div>
   `;
 
-  createModal('view-quotation-modal', `Service Quotation — ${quoteId}`, `
+  createModal('view-quotation-modal', `Service Quotation — ${quoteData.quote_id}`, `
     ${quotationHTML}
     <div class="no-print" style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
       <button class="btn btn-secondary" onclick="hideModal('view-quotation-modal')">Close [Esc]</button>
