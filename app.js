@@ -96,6 +96,7 @@ async function applySettings() {
   const logoData    = await DB.getSetting('logo_data');
   const companyName = await DB.getSetting('company_name');
   const showUndo    = await DB.getSetting('show_undo_button');
+  const showAiBtn   = await DB.getSetting('show_saga_ai_button');
   showUndoButtonSetting = showUndo !== 'false' ? 'true' : 'false';
 
   if (darkMode === 'true') {
@@ -111,6 +112,10 @@ async function applySettings() {
   if (companyName) {
     const el = document.getElementById('sidebar-company-name');
     if (el) el.innerHTML = companyName.replace(' ', '<br/>');
+  }
+  const fab = document.getElementById('gemini-fab');
+  if (fab) {
+    fab.style.display = (showAiBtn === 'false') ? 'none' : 'flex';
   }
 }
 

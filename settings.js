@@ -2,16 +2,17 @@
 
 async function renderSettings() {
   document.getElementById('page-title').textContent = 'Settings';
-  const [companyName, address, phone, email, invPrefix, footer, darkMode, textSize, minDiscountAmt, deliveryCharge, showUndo, geminiApiKey, aiProvider] = await Promise.all([
+  const [companyName, address, phone, email, invPrefix, footer, darkMode, textSize, minDiscountAmt, deliveryCharge, showUndo, geminiApiKey, aiProvider, showAIFab] = await Promise.all([
     DB.getSetting('company_name'), DB.getSetting('address'), DB.getSetting('phone'),
     DB.getSetting('email'), DB.getSetting('invoice_prefix'),
     DB.getSetting('footer_message'), DB.getSetting('dark_mode'), DB.getSetting('text_size'),
     DB.getSetting('min_discount_amount'), DB.getSetting('delivery_charge'),
     DB.getSetting('show_undo_button'), DB.getSetting('gemini_api_key'),
-    DB.getSetting('ai_provider')
+    DB.getSetting('ai_provider'), DB.getSetting('show_saga_ai_button')
   ]);
   const logoData = await DB.getSetting('logo_data');
   const isUndoVisible = showUndo !== 'false';
+  const isAIFabVisible = showAIFab !== 'false';
 
   // Staff sees only Appearance + Upload to Cloud
   // Admin sees everything
@@ -39,6 +40,15 @@ async function renderSettings() {
                 <span class="toggle-slider"></span>
               </label>
               <span id="dark-mode-label" style="font-size:0.9em;">${darkMode==='true'?'Dark Mode':'Light Mode'}</span>
+            </div>
+          <div class="form-group" style="margin-top:16px; border-top:1.5px dashed var(--border); padding-top:12px;">
+            <label class="form-label">Show SAGA AI Floating Button</label>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+              <label class="toggle">
+                <input type="checkbox" class="ai-fab-toggle" ${isAIFabVisible?'checked':''} onchange="toggleAIFabFromSettings(this.checked)"/>
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="ai-fab-toggle-label" style="font-size:0.9em;">${isAIFabVisible?'Visible':'Hidden'}</span>
             </div>
           </div>
         </div>
@@ -135,6 +145,15 @@ async function renderSettings() {
             </label>
             <span id="undo-toggle-label" style="font-size:0.9em;">${isUndoVisible?'Visible':'Hidden'}</span>
           </div>
+        <div class="form-group" style="margin-top:16px; border-top:1.5px dashed var(--border); padding-top:12px;">
+          <label class="form-label">Show SAGA AI Floating Button</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+            <label class="toggle">
+              <input type="checkbox" class="ai-fab-toggle" ${isAIFabVisible?'checked':''} onchange="toggleAIFabFromSettings(this.checked)"/>
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="ai-fab-toggle-label" style="font-size:0.9em;">${isAIFabVisible?'Visible':'Hidden'}</span>
+          </div>
         </div>
       </div>
 
@@ -215,7 +234,17 @@ async function renderSettings() {
         <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:16px;">
           Uses Google Gemini AI for business forecasting and operations assistance. Get your API key for free from <a href="https://aistudio.google.com/" target="_blank" style="color:var(--accent);text-decoration:underline;">Google AI Studio</a>.
         </div>
-        <button class="btn btn-primary" onclick="saveGeminiSettings()"><i class="fas fa-save"></i> Save AI Settings</button>
+        <div class="form-group" style="margin-top:16px; border-top:1.5px dashed var(--border); padding-top:12px; max-width:480px;">
+          <label class="form-label">Show SAGA AI Floating Button</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+            <label class="toggle">
+              <input type="checkbox" class="ai-fab-toggle" ${isAIFabVisible?'checked':''} onchange="toggleAIFabFromSettings(this.checked)"/>
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="ai-fab-toggle-label" style="font-size:0.9em;">${isAIFabVisible?'Visible':'Hidden'}</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveGeminiSettings()" style="margin-top:12px;"><i class="fas fa-save"></i> Save AI Settings</button>
       </div>
 
       <!-- About -->
@@ -507,4 +536,20 @@ async function toggleUndoFromSettings(checked) {
   const label = document.getElementById('undo-toggle-label');
   if (label) label.textContent = checked ? 'Visible' : 'Hidden';
   toast('Undo button visibility updated');
+}
+
+async function toggleAIFabFromSettings(checked) {
+  const val = checked ? 'true' : 'false';
+  await DB.setSetting('show_saga_ai_button', val);
+  document.querySelectorAll('.ai-fab-toggle-label').forEach(el => el.textContent = checked ? 'Visible' : 'Hidden');
+  document.querySelectorAll('.ai-fab-toggle').forEach(el => el.checked = checked);
+  const fab = document.getElementById('gemini-fab');
+  if (fab) fab.style.display = checked ? 'flex' : 'none';
+  if (!checked) {
+    const drawer = document.getElementById('gemini-drawer');
+    if (drawer && drawer.classList.contains('open')) {
+      drawer.classList.remove('open');
+    }
+  }
+  toast(`SAGA AI floating button ${checked ? 'shown' : 'hidden'}`);
 }
