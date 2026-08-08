@@ -270,73 +270,83 @@ async function deleteItemConfirm(id) {
 // PRINT CATALOG
 // ─────────────────────────────────────────────
 async function printItemsCatalog() {
-  const [allItems, companyName, logoData, address, phone, email] = await Promise.all([
-    DB.getItems(), DB.getSetting('company_name'), DB.getSetting('logo_data'),
-    DB.getSetting('address'), DB.getSetting('phone'), DB.getSetting('email')
-  ]);
-  const sorted    = allItems.sort((a,b)=>(a.item_id||'').localeCompare(b.item_id||''));
-  const printDate = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-  const company   = companyName||'Sagacious Washing Center';
-  const logoHTML  = logoData
-    ? `<img src="${logoData}" style="height:52px;width:auto;object-fit:contain;border-radius:8px;"/>`
-    : `<div style="height:52px;width:52px;border-radius:8px;background:linear-gradient(135deg,#00b4d8,#1a4d8f);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3em;">SW</div>`;
-  const half=Math.ceil(sorted.length/2);
-  const fmt=v=>Number(v||0).toLocaleString('en-LK',{minimumFractionDigits:2});
-  const buildRows=items=>items.map((item,idx)=>`
-    <tr style="background:${idx%2===0?'#fff':'#f8fafc'};">
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:0.82em;font-weight:600;">${item.item_name}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-size:0.82em;color:#7c3aed;">${fmt(item.dry_clean_price)}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-size:0.82em;color:#0369a1;">${fmt(item.wash_press_price)}</td>
-      <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-size:0.82em;color:#16a34a;">${fmt(item.wash_dry_price)}</td>
-    </tr>`).join('');
-  const thead=`<thead>
-    <tr style="background:#1a4d8f;color:#fff;">
-      <th style="padding:7px 8px;text-align:left;font-size:0.75em;text-transform:uppercase;" rowspan="2">Item Name</th>
-      <th colspan="3" style="padding:7px 8px;text-align:center;font-size:0.75em;text-transform:uppercase;border-left:1px solid rgba(255,255,255,0.2);">Price (LKR)</th>
-    </tr>
-    <tr style="background:#1e3a6e;color:#fff;">
-      <th style="padding:5px 8px;text-align:right;font-size:0.72em;border-left:1px solid rgba(255,255,255,0.2);">Dry Clean</th>
-      <th style="padding:5px 8px;text-align:right;font-size:0.72em;">Wash &amp; Press</th>
-      <th style="padding:5px 8px;text-align:right;font-size:0.72em;">Wash &amp; Dry</th>
-    </tr></thead>`;
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Items Catalog</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
-  <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;padding:24px 28px;}
-  @media print{body{padding:0;}@page{margin:12mm 10mm;size:A4;}}</style></head><body>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
-    <div style="display:flex;align-items:center;gap:12px;">${logoHTML}
-      <div><div style="font-family:'Playfair Display',serif;font-size:1.3em;font-weight:700;color:#1a4d8f;">${company}</div>
-      <div style="font-size:0.78em;color:#64748b;margin-top:3px;">Laundry Management System</div></div>
+  showProcessingOverlay('Preparing Catalog', 'Fetching item list and formatting...');
+  try {
+    const [allItems, companyName, logoData, address, phone, email] = await Promise.all([
+      DB.getItems(), DB.getSetting('company_name'), DB.getSetting('logo_data'),
+      DB.getSetting('address'), DB.getSetting('phone'), DB.getSetting('email')
+    ]);
+    const sorted    = allItems.sort((a,b)=>(a.item_id||'').localeCompare(b.item_id||''));
+    const printDate = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+    const company   = companyName||'Sagacious Washing Center';
+    const logoHTML  = logoData
+      ? `<img src="${logoData}" style="height:52px;width:auto;object-fit:contain;border-radius:8px;"/>`
+      : `<div style="height:52px;width:52px;border-radius:8px;background:linear-gradient(135deg,#00b4d8,#1a4d8f);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3em;">SW</div>`;
+    const half=Math.ceil(sorted.length/2);
+    const fmt=v=>Number(v||0).toLocaleString('en-LK',{minimumFractionDigits:2});
+    const buildRows=items=>items.map((item,idx)=>`
+      <tr style="background:${idx%2===0?'#fff':'#f8fafc'};">
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:0.82em;font-weight:600;">${item.item_name}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-size:0.82em;color:#7c3aed;">${fmt(item.dry_clean_price)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-size:0.82em;color:#0369a1;">${fmt(item.wash_press_price)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-size:0.82em;color:#16a34a;">${fmt(item.wash_dry_price)}</td>
+      </tr>`).join('');
+    const thead=`<thead>
+      <tr style="background:#1a4d8f;color:#fff;">
+        <th style="padding:7px 8px;text-align:left;font-size:0.75em;text-transform:uppercase;" rowspan="2">Item Name</th>
+        <th colspan="3" style="padding:7px 8px;text-align:center;font-size:0.75em;text-transform:uppercase;border-left:1px solid rgba(255,255,255,0.2);">Price (LKR)</th>
+      </tr>
+      <tr style="background:#1e3a6e;color:#fff;">
+        <th style="padding:5px 8px;text-align:right;font-size:0.72em;border-left:1px solid rgba(255,255,255,0.2);">Dry Clean</th>
+        <th style="padding:5px 8px;text-align:right;font-size:0.72em;">Wash &amp; Press</th>
+        <th style="padding:5px 8px;text-align:right;font-size:0.72em;">Wash &amp; Dry</th>
+      </tr></thead>`;
+    const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Items Catalog</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+    <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;padding:24px 28px;}
+    @media print{body{padding:0;}@page{margin:12mm 10mm;size:A4;}}</style></head><body>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #e2e8f0;">
+      <div style="display:flex;align-items:center;gap:12px;">${logoHTML}
+        <div><div style="font-family:'Playfair Display',serif;font-size:1.3em;font-weight:700;color:#1a4d8f;">${company}</div>
+        <div style="font-size:0.78em;color:#64748b;margin-top:3px;">Laundry Management System</div></div>
+      </div>
+      <div style="text-align:right;font-size:0.8em;color:#64748b;line-height:1.7;">
+        ${phone?`<div>${phone}</div>`:''}${address?`<div>${address}</div>`:''}${email?`<div>${email}</div>`:''}
+      </div>
     </div>
-    <div style="text-align:right;font-size:0.8em;color:#64748b;line-height:1.7;">
-      ${phone?`<div>${phone}</div>`:''}${address?`<div>${address}</div>`:''}${email?`<div>${email}</div>`:''}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-family:'Playfair Display',serif;font-size:1.15em;font-weight:700;">Items Catalog</div>
+      <div style="font-size:0.75em;color:#94a3b8;">Printed: ${printDate} · ${sorted.length} item${sorted.length!==1?'s':''}</div>
     </div>
-  </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <div style="font-family:'Playfair Display',serif;font-size:1.15em;font-weight:700;">Items Catalog</div>
-    <div style="font-size:0.75em;color:#94a3b8;">Printed: ${printDate} · ${sorted.length} item${sorted.length!==1?'s':''}</div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-    <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;">${thead}<tbody>${buildRows(sorted.slice(0,half))}</tbody></table>
-    <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;">${thead}<tbody>${sorted.slice(half).length?buildRows(sorted.slice(half)):'<tr><td colspan="4" style="padding:16px;text-align:center;color:#94a3b8;">—</td></tr>'}</tbody></table>
-  </div>
-  <div style="margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:0.72em;color:#94a3b8;">
-    <span>${company} — Items Catalog</span><span>Generated on ${printDate}</span>
-  </div>
-  <div style="margin-top:40px;display:flex;justify-content:space-between;align-items:flex-end;">
-    <div style="text-align:center;min-width:180px;">
-      <div style="height:50px;border-bottom:1.5px solid #1e293b;margin-bottom:6px;"></div>
-      <div style="font-size:0.85em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Issued By:-</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;">${thead}<tbody>${buildRows(sorted.slice(0,half))}</tbody></table>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;">${thead}<tbody>${sorted.slice(half).length?buildRows(sorted.slice(half)):'<tr><td colspan="4" style="padding:16px;text-align:center;color:#94a3b8;">—</td></tr>'}</tbody></table>
     </div>
-    <div style="text-align:center;min-width:180px;">
-      <div style="height:50px;border-bottom:1.5px solid #1e293b;margin-bottom:6px;"></div>
-      <div style="font-size:0.85em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Checked By:-</div>
+    <div style="margin-top:16px;padding-top:10px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:0.72em;color:#94a3b8;">
+      <span>${company} — Items Catalog</span><span>Generated on ${printDate}</span>
     </div>
-  </div>
-  <script>window.onload=()=>window.print();<\/script></body></html>`;
-  const w=window.open('','_blank');
-  if(!w) return toast('Allow pop-ups to print','warning');
-  w.document.write(html); w.document.close();
+    <div style="margin-top:40px;display:flex;justify-content:space-between;align-items:flex-end;">
+      <div style="text-align:center;min-width:180px;">
+        <div style="height:50px;border-bottom:1.5px solid #1e293b;margin-bottom:6px;"></div>
+        <div style="font-size:0.85em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Issued By:-</div>
+      </div>
+      <div style="text-align:center;min-width:180px;">
+        <div style="height:50px;border-bottom:1.5px solid #1e293b;margin-bottom:6px;"></div>
+        <div style="font-size:0.85em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Checked By:-</div>
+      </div>
+    </div>
+    <script>window.onload=()=>window.print();<\/script></body></html>`;
+    const w=window.open('','_blank');
+    if(!w) {
+      hideProcessingOverlay();
+      return toast('Allow pop-ups to print','warning');
+    }
+    w.document.write(html); w.document.close();
+  } catch (err) {
+    toast('Error printing catalog: ' + (err.message || err), 'error');
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -889,23 +899,31 @@ async function renderQuotationView(quoteData) {
 function printQuotationView() {
   const content = document.getElementById('quotation-print-area');
   if (!content) return;
-  const printHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Service Quotation</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet"/>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;padding:24px;}
-    @media print{
-      body{padding:0;}
-      @page{margin:10mm 10mm;size:A4;}
-    }
-  </style></head><body>
-  ${content.outerHTML}
-  <script>window.onload=()=>window.print();<\/script>
-  </body></html>`;
+  showProcessingOverlay('Preparing Quotation', 'Formatting print document...');
+  try {
+    const printHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Service Quotation</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet"/>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;padding:24px;}
+      @media print{
+        body{padding:0;}
+        @page{margin:10mm 10mm;size:A4;}
+      }
+    </style></head><body>
+    ${content.outerHTML}
+    <script>window.onload=()=>window.print();<\/script>
+    </body></html>`;
 
-  const w = window.open('', '_blank');
-  if (!w) return toast('Please allow pop-ups to print PDF', 'warning');
-  w.document.write(printHTML);
-  w.document.close();
+    const w = window.open('', '_blank');
+    if (!w) {
+      hideProcessingOverlay();
+      return toast('Please allow pop-ups to print PDF', 'warning');
+    }
+    w.document.write(printHTML);
+    w.document.close();
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 

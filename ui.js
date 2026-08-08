@@ -2,6 +2,90 @@
 
 // ui.js - UI Utilities
 
+// ─── Processing Overlay ───────────────────────────────────────────
+// Circular progress overlay for long-running operations
+let _processingInterval = null;
+let _processingProgress = 0;
+
+function showProcessingOverlay(label, sublabel) {
+  const overlay = document.getElementById('processing-overlay');
+  if (!overlay) return;
+  
+  // Reset state
+  _processingProgress = 0;
+  _updateRing(0);
+  
+  // Set labels
+  const lblEl = document.getElementById('processing-label');
+  const subEl = document.getElementById('processing-sublabel');
+  if (lblEl) lblEl.innerHTML = (label || 'Request is Processing') + '<span class="processing-dots"></span>';
+  if (subEl) subEl.textContent = sublabel || 'Please wait...';
+  
+  // Show overlay
+  overlay.classList.add('active');
+  
+  // Start simulated progress (moves quickly to ~85%, then slows)
+  _processingInterval = setInterval(() => {
+    if (_processingProgress < 85) {
+      _processingProgress += Math.random() * 6 + 2; // 2-8% per tick
+    } else if (_processingProgress < 95) {
+      _processingProgress += Math.random() * 1.5 + 0.3; // slow down near end
+    }
+    _processingProgress = Math.min(_processingProgress, 95);
+    _updateRing(_processingProgress);
+  }, 300);
+}
+
+function updateProcessingProgress(percent) {
+  _processingProgress = Math.min(percent, 100);
+  _updateRing(_processingProgress);
+}
+
+function hideProcessingOverlay() {
+  // Complete the ring to 100%
+  if (_processingInterval) {
+    clearInterval(_processingInterval);
+    _processingInterval = null;
+  }
+  
+  _processingProgress = 100;
+  _updateRing(100);
+  
+  // Wait a brief moment at 100% before hiding
+  setTimeout(() => {
+    const overlay = document.getElementById('processing-overlay');
+    if (overlay) overlay.classList.remove('active');
+    _processingProgress = 0;
+  }, 400);
+}
+
+function _updateRing(percent) {
+  const circle = document.getElementById('processing-ring-circle');
+  const percentText = document.getElementById('processing-percent-text');
+  if (!circle || !percentText) return;
+  
+  const circumference = 2 * Math.PI * 54; // r=54
+  const offset = circumference - (percent / 100) * circumference;
+  circle.setAttribute('stroke-dashoffset', offset.toString());
+  percentText.textContent = Math.round(percent);
+}
+
+// Wraps an async function with the processing overlay
+// Usage: await withProcessingOverlay(asyncFn, 'Generating Bill', 'Processing items...')
+async function withProcessingOverlay(asyncFn, label, sublabel) {
+  showProcessingOverlay(label, sublabel);
+  try {
+    const result = await asyncFn();
+    return result;
+  } catch (err) {
+    throw err;
+  } finally {
+    hideProcessingOverlay();
+  }
+}
+// ──────────────────────────────────────────────────────────────────
+
+
 let currentUser = null;
 function isAdmin() { return currentUser?.role === 'admin'; }
 function requireAdmin() {

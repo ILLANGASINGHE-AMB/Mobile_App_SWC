@@ -1846,6 +1846,7 @@ async function processBatchPayment(method = 'Cash', notes = 'Paid fully via Batc
   }
 
   try {
+    showProcessingOverlay('Processing Batch Payment', 'Creating invoices and payments...');
     const orderIds = details.map(d => d.orderId);
     
     // Fetch all details from DB
@@ -1961,6 +1962,8 @@ async function processBatchPayment(method = 'Cash', notes = 'Paid fully via Batc
     }
   } catch (err) {
     toast('Error: ' + (err.message || err), 'error');
+  } finally {
+    hideProcessingOverlay();
   }
 }
 

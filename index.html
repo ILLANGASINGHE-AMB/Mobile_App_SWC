@@ -249,6 +249,96 @@
     .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── Processing Overlay ── */
+    #processing-overlay {
+      position: fixed; inset: 0; z-index: 10000;
+      display: none; align-items: center; justify-content: center;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      animation: processingFadeIn 0.3s ease;
+    }
+    #processing-overlay.active { display: flex; }
+    @keyframes processingFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .processing-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 40px 48px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.08);
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+      min-width: 280px;
+      animation: processingSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes processingSlideUp { from { transform: translateY(30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+    .processing-ring-container {
+      position: relative; width: 120px; height: 120px;
+    }
+    .processing-ring-bg {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      border: 6px solid var(--border);
+    }
+    .processing-ring-svg {
+      width: 120px; height: 120px;
+      transform: rotate(-90deg);
+    }
+    .processing-ring-svg circle {
+      fill: none;
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.4s ease;
+    }
+    .processing-ring-track { stroke: transparent; }
+    .processing-ring-progress {
+      stroke: var(--primary);
+      filter: drop-shadow(0 0 6px rgba(26,77,143,0.5));
+    }
+    .processing-ring-glow {
+      position: absolute; inset: 8px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(26,77,143,0.08) 0%, transparent 70%);
+      animation: processingPulse 2s ease-in-out infinite;
+    }
+    @keyframes processingPulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+    .processing-percent {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.6em; font-weight: 700;
+      color: var(--primary);
+    }
+    .processing-percent span { font-size: 0.55em; font-weight: 500; margin-left: 1px; color: var(--text-muted); }
+
+    .processing-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.05em; font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      letter-spacing: 0.2px;
+    }
+    .processing-sublabel {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82em;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: -10px;
+    }
+    .processing-dots::after {
+      content: '';
+      animation: processingDots 1.5s steps(4, end) infinite;
+    }
+    @keyframes processingDots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
+
     /* Toast */
     #toast-container { position: fixed; top: 18px; right: 18px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
     .toast { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.14); display: flex; align-items: center; gap: 10px; min-width: 270px; font-size: 0.88em; animation: slideIn 0.3s ease; }
@@ -570,6 +660,26 @@
 </head>
 <body>
   <div id="toast-container"></div>
+
+  <!-- Processing Overlay -->
+  <div id="processing-overlay">
+    <div class="processing-card">
+      <div class="processing-ring-container">
+        <div class="processing-ring-bg"></div>
+        <svg class="processing-ring-svg" viewBox="0 0 120 120">
+          <circle class="processing-ring-track" cx="60" cy="60" r="54" />
+          <circle class="processing-ring-progress" id="processing-ring-circle" cx="60" cy="60" r="54"
+            stroke-dasharray="339.292" stroke-dashoffset="339.292" />
+        </svg>
+        <div class="processing-ring-glow"></div>
+        <div class="processing-percent">
+          <span id="processing-percent-text">0</span><span>%</span>
+        </div>
+      </div>
+      <div class="processing-label" id="processing-label">Request is Processing<span class="processing-dots"></span></div>
+      <div class="processing-sublabel" id="processing-sublabel">Please wait...</div>
+    </div>
+  </div>
 
   <!-- Login Screen -->
   <div id="login-screen">

@@ -459,6 +459,7 @@ async function saveCreditBill() {
   const billTotal = Math.max(0, itemsSubtotal-discAmt+deliveryCharge); // delivery added after
 
   try {
+    showProcessingOverlay('Generating Bill', 'Saving credit bill details...');
     const batchId = await DB.generateBatchId();
     const orderId = await DB.addOrder({
       customer_id:     custId,
@@ -502,6 +503,8 @@ async function saveCreditBill() {
   } catch(err) {
     console.error(err);
     toast('Failed to save: ' + (err.message || err), 'error');
+  } finally {
+    hideProcessingOverlay();
   }
 }
 

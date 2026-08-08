@@ -210,7 +210,9 @@ async function generateFullReport() {
   if(!from||!to) return toast('Select both dates','error');
   if(from>to)    return toast('From date must be before To date','error');
 
+  showProcessingOverlay('Generating Full Report', 'Fetching orders and calculations...');
   document.getElementById('full-report-body').innerHTML = `<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary);"></i><div style="margin-top:8px;color:var(--text-muted);">Loading...</div></div>`;
+  try {
 
   const [orders,customers,drivers,invoices,payments,orderItemsAll] = await Promise.all([
     DB.getOrders(), DB.getCustomers(), DB.getDrivers(),
@@ -338,6 +340,9 @@ async function generateFullReport() {
     </div>`;
 
   document.getElementById('full-report-export').style.display='flex';
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 
 function exportFullReport(type) {
@@ -360,6 +365,8 @@ function exportFullReport(type) {
 }
 
 async function printFullReport() {
+  showProcessingOverlay('Printing Full Report', 'Preparing print layout...');
+  try {
   const rows = window._fullReportData || [];
   const meta = window._fullReportMeta || {};
   if (!rows.length) return toast('Generate the report first', 'error');
@@ -487,9 +494,15 @@ async function printFullReport() {
     </body></html>`;
 
   const w = window.open('', '_blank');
-  if (!w) return toast('Please allow pop-ups to print', 'warning');
+  if (!w) {
+    hideProcessingOverlay();
+    return toast('Please allow pop-ups to print', 'warning');
+  }
   w.document.write(printHTML);
   w.document.close();
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -578,6 +591,7 @@ async function generateCustomerSummaryReport() {
     return toast('Please select at least one item to include in the report', 'warning');
   }
 
+  showProcessingOverlay('Generating Customer Summary', 'Fetching order data...');
   document.getElementById('cs-report-body').innerHTML = `<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary);"></i><div style="margin-top:8px;color:var(--text-muted);">Loading...</div></div>`;
 
   try {
@@ -759,6 +773,8 @@ async function generateCustomerSummaryReport() {
     document.getElementById('cs-report-export').style.display='flex';
   } catch (err) {
     toast('Error generating report: ' + (err.message || err), 'error');
+  } finally {
+    hideProcessingOverlay();
   }
 }
 
@@ -818,6 +834,8 @@ function exportCustomerSummary(type) {
 }
 
 async function printCustomerSummary() {
+  showProcessingOverlay('Printing Customer Summary', 'Preparing print layout...');
+  try {
   const data = window._csReportData;
   if (!data) return toast('Generate the report first', 'error');
 
@@ -980,9 +998,15 @@ async function printCustomerSummary() {
     </body></html>`;
 
   const w = window.open('', '_blank');
-  if (!w) return toast('Please allow pop-ups to print', 'warning');
+  if (!w) {
+    hideProcessingOverlay();
+    return toast('Please allow pop-ups to print', 'warning');
+  }
   w.document.write(printHTML);
   w.document.close();
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -1017,79 +1041,86 @@ async function generateMonthlyBillsReport() {
   const monthVal = document.getElementById('mb-month')?.value;
   if (!monthVal) return toast('Please select a month', 'error');
 
+  showProcessingOverlay('Generating Monthly Bills', 'Fetching monthly order data...');
   document.getElementById('mb-report-body').innerHTML = `<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin fa-2x" style="color:var(--primary);"></i><div style="margin-top:8px;color:var(--text-muted);">Loading...</div></div>`;
 
-  const [orders, customers] = await Promise.all([DB.getOrders(), DB.getCustomers()]);
-  const cMap = Object.fromEntries(customers.map(c => [c.id, c]));
+  try {
+    const [orders, customers] = await Promise.all([DB.getOrders(), DB.getCustomers()]);
+    const cMap = Object.fromEntries(customers.map(c => [c.id, c]));
 
-  const _orderDate = o => (o.pickup_date || o.created_at || '').slice(0, 10);
+    const _orderDate = o => (o.pickup_date || o.created_at || '').slice(0, 10);
 
-  // Filter orders belonging to the selected month
-  const filtered = orders.filter(o => {
-    const d = _orderDate(o);
-    return d && d.startsWith(monthVal);
-  }).sort((a, b) => {
-    const da = _orderDate(a), db = _orderDate(b);
-    return new Date(da) - new Date(db);
-  });
+    // Filter orders belonging to the selected month
+    const filtered = orders.filter(o => {
+      const d = _orderDate(o);
+      return d && d.startsWith(monthVal);
+    }).sort((a, b) => {
+      const da = _orderDate(a), db = _orderDate(b);
+      return new Date(da) - new Date(db);
+    });
 
-  if (!filtered.length) {
-    document.getElementById('mb-report-body').innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);">No orders found for this month.</div>`;
-    document.getElementById('mb-report-export').style.display = 'none';
-    return;
+    if (!filtered.length) {
+      document.getElementById('mb-report-body').innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);">No orders found for this month.</div>`;
+      document.getElementById('mb-report-export').style.display = 'none';
+      return;
+    }
+
+    let grandTotal = 0;
+    const reportRows = filtered.map((o, idx) => {
+      const orderPrice = o.total_amount || 0;
+      grandTotal += orderPrice;
+      return {
+        no: idx + 1,
+        date: _orderDate(o),
+        order_id: o.batch_id || '—',
+        customer: getOrderCustomerName(o, cMap),
+        order_price: orderPrice
+      };
+    });
+
+    window._monthlyBillsData = reportRows;
+    window._monthlyBillsMeta = { month: monthVal, grandTotal, count: filtered.length };
+
+    // Parse month label
+    const [yr, mn] = monthVal.split('-');
+    const monthLabel = new Date(Number(yr), Number(mn) - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
+    const tableRows = reportRows.map(r => `<tr>
+      <td style="text-align:center;">${r.no}</td>
+      <td style="white-space:nowrap;">${formatDate(r.date)}</td>
+      <td style="font-family:monospace;font-size:0.88em;font-weight:700;">${r.order_id}</td>
+      <td>${r.customer}</td>
+      <td style="text-align:right;font-weight:600;">${formatCurrency(r.order_price)}</td>
+    </tr>`).join('');
+
+    document.getElementById('mb-report-body').innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
+        <div class="stat-card"><div class="label">Month</div><div class="value" style="font-size:1em;">${monthLabel}</div></div>
+        <div class="stat-card"><div class="label">Total Orders</div><div class="value">${filtered.length}</div></div>
+      </div>
+      <div class="table-wrap" style="max-height:420px;overflow-y:auto;">
+        <table>
+          <thead style="position:sticky;top:0;z-index:2;"><tr>
+            <th style="text-align:center;width:50px;">#</th>
+            <th>Date</th>
+            <th>Order ID</th>
+            <th>Customer Name</th>
+            <th style="text-align:right;">Order Price</th>
+          </tr></thead>
+          <tbody>${tableRows}</tbody>
+          <tfoot><tr>
+            <td colspan="4" style="font-weight:700;padding:12px 16px;text-align:right;border-top:2px solid var(--border);">Total</td>
+            <td style="font-weight:700;padding:12px 16px;text-align:right;border-top:2px solid var(--border);">${formatCurrency(grandTotal)}</td>
+          </tr></tfoot>
+        </table>
+      </div>`;
+
+    document.getElementById('mb-report-export').style.display = 'flex';
+  } catch (err) {
+    toast('Error generating report: ' + (err.message || err), 'error');
+  } finally {
+    hideProcessingOverlay();
   }
-
-  let grandTotal = 0;
-  const reportRows = filtered.map((o, idx) => {
-    const orderPrice = o.total_amount || 0;
-    grandTotal += orderPrice;
-    return {
-      no: idx + 1,
-      date: _orderDate(o),
-      order_id: o.batch_id || '—',
-      customer: getOrderCustomerName(o, cMap),
-      order_price: orderPrice
-    };
-  });
-
-  window._monthlyBillsData = reportRows;
-  window._monthlyBillsMeta = { month: monthVal, grandTotal, count: filtered.length };
-
-  // Parse month label
-  const [yr, mn] = monthVal.split('-');
-  const monthLabel = new Date(Number(yr), Number(mn) - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-
-  const tableRows = reportRows.map(r => `<tr>
-    <td style="text-align:center;">${r.no}</td>
-    <td style="white-space:nowrap;">${formatDate(r.date)}</td>
-    <td style="font-family:monospace;font-size:0.88em;font-weight:700;">${r.order_id}</td>
-    <td>${r.customer}</td>
-    <td style="text-align:right;font-weight:600;">${formatCurrency(r.order_price)}</td>
-  </tr>`).join('');
-
-  document.getElementById('mb-report-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
-      <div class="stat-card"><div class="label">Month</div><div class="value" style="font-size:1em;">${monthLabel}</div></div>
-      <div class="stat-card"><div class="label">Total Orders</div><div class="value">${filtered.length}</div></div>
-    </div>
-    <div class="table-wrap" style="max-height:420px;overflow-y:auto;">
-      <table>
-        <thead style="position:sticky;top:0;z-index:2;"><tr>
-          <th style="text-align:center;width:50px;">#</th>
-          <th>Date</th>
-          <th>Order ID</th>
-          <th>Customer Name</th>
-          <th style="text-align:right;">Order Price</th>
-        </tr></thead>
-        <tbody>${tableRows}</tbody>
-        <tfoot><tr>
-          <td colspan="4" style="font-weight:700;padding:12px 16px;text-align:right;border-top:2px solid var(--border);">Total</td>
-          <td style="font-weight:700;padding:12px 16px;text-align:right;border-top:2px solid var(--border);">${formatCurrency(grandTotal)}</td>
-        </tr></tfoot>
-      </table>
-    </div>`;
-
-  document.getElementById('mb-report-export').style.display = 'flex';
 }
 
 function exportMonthlyBills(type) {
@@ -1109,109 +1140,120 @@ async function printMonthlyBills() {
   const meta = window._monthlyBillsMeta || {};
   if (!rows.length) return toast('Generate the report first', 'error');
 
-  const settings = {
-    company_name: await DB.getSetting('company_name') || 'Sagacious Washing Center',
-    address:      await DB.getSetting('address') || '',
-    phone:        await DB.getSetting('phone') || '',
-    email:        await DB.getSetting('email') || ''
-  };
-  const logoData = await DB.getSetting('logo_data');
-  const logoHTML = logoData
-    ? `<img src="${logoData}" style="height:56px;width:56px;object-fit:cover;border-radius:10px;"/>`
-    : `<div style="height:56px;width:56px;border-radius:10px;background:linear-gradient(135deg,#00b4d8,#1a4d8f);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.4em;">SW</div>`;
+  showProcessingOverlay('Printing Monthly Bills', 'Preparing print layout...');
 
-  // Parse month label
-  const [yr, mn] = (meta.month || '').split('-');
-  const monthLabel = (yr && mn) ? new Date(Number(yr), Number(mn) - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : meta.month;
+  try {
+    const settings = {
+      company_name: await DB.getSetting('company_name') || 'Sagacious Washing Center',
+      address:      await DB.getSetting('address') || '',
+      phone:        await DB.getSetting('phone') || '',
+      email:        await DB.getSetting('email') || ''
+    };
+    const logoData = await DB.getSetting('logo_data');
+    const logoHTML = logoData
+      ? `<img src="${logoData}" style="height:56px;width:56px;object-fit:cover;border-radius:10px;"/>`
+      : `<div style="height:56px;width:56px;border-radius:10px;background:linear-gradient(135deg,#00b4d8,#1a4d8f);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.4em;">SW</div>`;
 
-  let shade = false;
-  const bodyRows = rows.map(r => {
-    shade = !shade;
-    const bg = shade ? '#f6f9fc' : '#ffffff';
-    return `<tr style="background:${bg};">
-      <td style="padding:7px 9px;text-align:center;">${r.no}</td>
-      <td style="padding:7px 9px;white-space:nowrap;">${formatDate(r.date)}</td>
-      <td style="padding:7px 9px;font-family:monospace;font-weight:700;white-space:nowrap;">${r.order_id}</td>
-      <td style="padding:7px 9px;">${r.customer}</td>
-      <td style="padding:7px 9px;text-align:right;font-weight:600;">${formatCurrency(r.order_price)}</td>
-    </tr>`;
-  }).join('');
+    // Parse month label
+    const [yr, mn] = (meta.month || '').split('-');
+    const monthLabel = (yr && mn) ? new Date(Number(yr), Number(mn) - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) : meta.month;
 
-  const printHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
-    <title>Monthly Bills — ${monthLabel}</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet"/>
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0;}
-      body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;font-size:11px;}
-      @page{size:A4 portrait;margin:14mm 12mm;}
-      table{width:100%;border-collapse:collapse;}
-      thead{display:table-header-group;}
-      tr{page-break-inside:avoid;}
-      th{background:#1a4d8f;color:#fff;padding:8px 9px;text-align:left;font-size:0.82em;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;}
-      td{border-bottom:1px solid #eef2f7;}
-    </style></head><body>
-    <div style="padding:4px 6px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #e2e8f0;padding-bottom:14px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:12px;">
-          ${logoHTML}
-          <div>
-            <div style="font-family:'Playfair Display',serif;font-size:1.5em;font-weight:700;color:#1a4d8f;">${settings.company_name}</div>
-            ${settings.address ? `<div style="font-size:0.9em;color:#64748b;margin-top:2px;">${settings.address}</div>` : ''}
-            <div style="font-size:0.9em;color:#64748b;">${[settings.phone, settings.email].filter(Boolean).join('  |  ')}</div>
+    let shade = false;
+    const bodyRows = rows.map(r => {
+      shade = !shade;
+      const bg = shade ? '#f6f9fc' : '#ffffff';
+      return `<tr style="background:${bg};">
+        <td style="padding:7px 9px;text-align:center;">${r.no}</td>
+        <td style="padding:7px 9px;white-space:nowrap;">${formatDate(r.date)}</td>
+        <td style="padding:7px 9px;font-family:monospace;font-weight:700;white-space:nowrap;">${r.order_id}</td>
+        <td style="padding:7px 9px;">${r.customer}</td>
+        <td style="padding:7px 9px;text-align:right;font-weight:600;">${formatCurrency(r.order_price)}</td>
+      </tr>`;
+    }).join('');
+
+    const printHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+      <title>Monthly Bills — ${monthLabel}</title>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;font-size:11px;}
+        @page{size:A4 portrait;margin:14mm 12mm;}
+        table{width:100%;border-collapse:collapse;}
+        thead{display:table-header-group;}
+        tr{page-break-inside:avoid;}
+        th{background:#1a4d8f;color:#fff;padding:8px 9px;text-align:left;font-size:0.82em;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;}
+        td{border-bottom:1px solid #eef2f7;}
+      </style></head><body>
+      <div style="padding:4px 6px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #e2e8f0;padding-bottom:14px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            ${logoHTML}
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:1.5em;font-weight:700;color:#1a4d8f;">${settings.company_name}</div>
+              ${settings.address ? `<div style="font-size:0.9em;color:#64748b;margin-top:2px;">${settings.address}</div>` : ''}
+              <div style="font-size:0.9em;color:#64748b;">${[settings.phone, settings.email].filter(Boolean).join('  |  ')}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Playfair Display',serif;font-size:1.7em;font-weight:800;color:#1a4d8f;">Monthly Bills</div>
+            <div style="font-size:0.95em;color:#374151;margin-top:4px;"><strong>${monthLabel}</strong></div>
+            <div style="font-size:0.85em;color:#94a3b8;margin-top:2px;">Generated: ${formatDateTime(new Date().toISOString())}</div>
           </div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-family:'Playfair Display',serif;font-size:1.7em;font-weight:800;color:#1a4d8f;">Monthly Bills</div>
-          <div style="font-size:0.95em;color:#374151;margin-top:4px;"><strong>${monthLabel}</strong></div>
-          <div style="font-size:0.85em;color:#94a3b8;margin-top:2px;">Generated: ${formatDateTime(new Date().toISOString())}</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
+          <div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;background:#f8fafc;">
+            <div style="font-size:0.78em;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;">Total Orders</div>
+            <div style="font-size:1.5em;font-weight:800;color:#1a4d8f;font-family:'Playfair Display',serif;">${meta.count || 0}</div>
+          </div>
+          <div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;background:#f8fafc;">
+            <div style="font-size:0.78em;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;">Grand Total</div>
+            <div style="font-size:1.25em;font-weight:800;color:#1a4d8f;font-family:'Playfair Display',serif;">${formatCurrency(meta.grandTotal || 0)}</div>
+          </div>
+        </div>
+        <table>
+          <thead><tr>
+            <th style="text-align:center;width:40px;">#</th>
+            <th>Date</th>
+            <th>Order ID</th>
+            <th>Customer Name</th>
+            <th style="text-align:right;">Order Price</th>
+          </tr></thead>
+          <tbody>${bodyRows}
+            <tr style="page-break-inside:avoid;">
+              <td colspan="4" style="text-align:right;font-weight:700;border-top:2.5px solid #1a4d8f;padding:11px 9px;">Total</td>
+              <td style="text-align:right;font-weight:700;border-top:2.5px solid #1a4d8f;padding:11px 9px;">${formatCurrency(meta.grandTotal || 0)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:40px;display:flex;justify-content:space-between;align-items:flex-end;">
+          <div style="text-align:center;min-width:180px;">
+            <div style="height:50px;border-bottom:1.5px solid #1e293b;margin-bottom:6px;"></div>
+            <div style="font-size:0.85em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Issued By:-</div>
+          </div>
+          <div style="text-align:center;min-width:180px;">
+            <div style="height:50px;border-bottom:1.5px solid #1e293b;margin-bottom:6px;"></div>
+            <div style="font-size:0.85em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Checked By:-</div>
+          </div>
+        </div>
+        <div style="margin-top:18px;text-align:center;font-size:0.82em;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px;">
+          ${settings.company_name} &mdash; Monthly Bills &mdash; ${monthLabel}
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
-        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;background:#f8fafc;">
-          <div style="font-size:0.78em;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;">Total Orders</div>
-          <div style="font-size:1.5em;font-weight:800;color:#1a4d8f;font-family:'Playfair Display',serif;">${meta.count || 0}</div>
-        </div>
-        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;background:#f8fafc;">
-          <div style="font-size:0.78em;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;font-weight:700;">Grand Total</div>
-          <div style="font-size:1.25em;font-weight:800;color:#1a4d8f;font-family:'Playfair Display',serif;">${formatCurrency(meta.grandTotal || 0)}</div>
-        </div>
-      </div>
-      <table>
-        <thead><tr>
-          <th style="text-align:center;width:40px;">#</th>
-          <th>Date</th>
-          <th>Order ID</th>
-          <th>Customer Name</th>
-          <th style="text-align:right;">Order Price</th>
-        </tr></thead>
-        <tbody>${bodyRows}
-          <tr style="page-break-inside:avoid;">
-            <td colspan="4" style="text-align:right;font-weight:700;border-top:2.5px solid #1a4d8f;padding:11px 9px;">Total</td>
-            <td style="text-align:right;font-weight:700;border-top:2.5px solid #1a4d8f;padding:11px 9px;">${formatCurrency(meta.grandTotal || 0)}</td>
-          </tr>
-        </tbody>
-      </table>
-      <div style="margin-top:40px;display:flex;justify-content:space-between;align-items:flex-end;">
-        <div style="text-align:center;min-width:180px;">
-          <div style="height:50px;border-bottom:1.5px solid #1e293b;margin-bottom:6px;"></div>
-          <div style="font-size:0.85em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Issued By:-</div>
-        </div>
-        <div style="text-align:center;min-width:180px;">
-          <div style="height:50px;border-bottom:1.5px solid #1e293b;margin-bottom:6px;"></div>
-          <div style="font-size:0.85em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Checked By:-</div>
-        </div>
-      </div>
-      <div style="margin-top:18px;text-align:center;font-size:0.82em;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:10px;">
-        ${settings.company_name} &mdash; Monthly Bills &mdash; ${monthLabel}
-      </div>
-    </div>
-    <script>document.fonts.ready.then(()=>window.print());<\/script>
-    </body></html>`;
+      <script>document.fonts.ready.then(()=>window.print());<\/script>
+      </body></html>`;
 
-  const w = window.open('', '_blank');
-  if (!w) return toast('Please allow pop-ups to print', 'warning');
-  w.document.write(printHTML);
-  w.document.close();
+    const w = window.open('', '_blank');
+    if (!w) {
+      hideProcessingOverlay();
+      return toast('Please allow pop-ups to print', 'warning');
+    }
+    w.document.write(printHTML);
+    w.document.close();
+  } catch (err) {
+    toast('Error printing monthly bills: ' + (err.message || err), 'error');
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 
 // ─────────────────────────────────────────────

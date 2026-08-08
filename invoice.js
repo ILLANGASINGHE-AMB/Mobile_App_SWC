@@ -800,6 +800,8 @@ async function viewInvoice(id) {
 }
 
 async function printInvoice(id) {
+  showProcessingOverlay('Generating Invoice', 'Preparing print layout...');
+  try {
   let inv;
   if (id && typeof id === 'object') {
     inv = id;
@@ -1089,11 +1091,16 @@ async function printInvoice(id) {
   if (!w) return toast('Please allow pop-ups to print', 'warning');
   w.document.write(printHTML);
   w.document.close();
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 
 // ── STANDARD INVOICE with discount + delivery ──
 async function generateInvoiceForOrder(orderId) {
-  const order = await DB.getOrder(orderId); if (!order) return toast('Order not found', 'error');
+  showProcessingOverlay('Generating Invoice', 'Creating invoice for order...');
+  try {
+  const order = await DB.getOrder(orderId); if (!order) { hideProcessingOverlay(); return toast('Order not found', 'error'); }
   const items = await DB.getOrderItems(orderId);
   if (!items.length) return toast('Add items to this order first', 'warning');
 
@@ -1121,6 +1128,9 @@ async function generateInvoiceForOrder(orderId) {
     toast('Invoice created');
   }
   viewInvoice(inv.id);
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 
 // Kept for compatibility
