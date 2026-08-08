@@ -98,12 +98,8 @@ async function _refreshItemsTable() {
 
   const statsEl = document.getElementById('items-stats');
   if(statsEl) {
-    const avg = (key) => allItems.length ? allItems.reduce((s,i)=>s+(i[key]||0),0)/allItems.length : 0;
     statsEl.innerHTML =
-      `<div class="stat-card"><div class="label">Total Items</div><div class="value">${allItems.length}</div><div class="sub">In catalog</div></div>`+
-      `<div class="stat-card"><div class="label">Avg Dry Clean</div><div class="value" style="font-size:1.3em;">${formatCurrency(avg('dry_clean_price'))}</div></div>`+
-      `<div class="stat-card"><div class="label">Avg Wash &amp; Press</div><div class="value" style="font-size:1.3em;">${formatCurrency(avg('wash_press_price'))}</div></div>`+
-      `<div class="stat-card"><div class="label">Avg Wash &amp; Dry</div><div class="value" style="font-size:1.3em;">${formatCurrency(avg('wash_dry_price'))}</div></div>`;
+      `<div class="stat-card"><div class="label">Total Items</div><div class="value">${allItems.length}</div><div class="sub">In catalog</div></div>`;
   }
   const countEl = document.getElementById('items-count');
   if(countEl) countEl.textContent = total+' item'+(total!==1?'s':'');
