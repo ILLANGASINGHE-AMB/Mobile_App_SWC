@@ -41,23 +41,6 @@ A modern, full-featured web-based **Laundry Management System and Point of Sale 
 
 ---
 
-## ⚙️ Deployment & Environment Variables
-
-### Netlify Deployment
-This repository is configured for automatic 1-click deployment on Netlify using `netlify.toml`.
-
-#### Optional Netlify Environment Variables:
-You can configure your custom Supabase database keys directly in Netlify UI under **Site configuration** > **Environment variables**:
-
-| Variable Name | Description | Default Value |
-| :--- | :--- | :--- |
-| `SUPABASE_URL` | Supabase Project Endpoint URL | `https://mzxpdirmsegsgkrunerk.supabase.co` |
-| `SUPABASE_ANON_KEY` | Supabase Public Anonymous Key | *(Configured default)* |
-
-> **Note**: If no environment variables are set in Netlify, the application automatically uses the built-in default project credentials.
-
----
-
 ## 🚀 Local Development
 
 1. **Clone the Repository**:
