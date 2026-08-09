@@ -335,9 +335,15 @@ async function calculateAnalyticsData(filters) {
   const end = filters.endDate ? new Date(filters.endDate + 'T23:59:59') : new Date('2099-12-31');
 
   // 1. Filter Orders
+  const isAllTime = filters.preset === 'all' || (!filters.startDate && !filters.endDate);
+
   const filteredOrders = (orders || []).filter(o => {
-    const oDate = new Date(o.pickup_date || o.created_at || o.date);
-    if (isNaN(oDate) || oDate < start || oDate > end) return false;
+    if (!isAllTime) {
+      const dateStr = o.created_at || o.pickup_date || o.delivery_date || o.date;
+      const oDate = dateStr ? new Date(dateStr) : null;
+      if (!oDate || isNaN(oDate.getTime()) || oDate < start || oDate > end) return false;
+    }
+
     if (filters.customerId !== 'all' && String(o.customer_id) !== String(filters.customerId)) return false;
     if (filters.paymentStatus !== 'all' && o.status !== filters.paymentStatus) return false;
 
