@@ -2,6 +2,7 @@
 
 const TransportModule = {
   selectedCustomerSeq: [], // [{ customer_id, hotel_name, visit_order }]
+  allCustomersCache: [],
 
   async init() {
     this.renderLayout();
@@ -322,6 +323,7 @@ const TransportModule = {
 
     if (!trip) return;
 
+    this.allCustomersCache = customers || [];
     // Load existing selection or reset
     this.selectedCustomerSeq = trip.selected_customers ? [...trip.selected_customers] : [];
 
@@ -333,7 +335,7 @@ const TransportModule = {
               <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                 <i class="fa-solid fa-list-check text-indigo-600"></i> Select Customers for Trip (${trip.trip_id})
               </h3>
-              <p class="text-xs text-slate-400">Click customers in the order they will be visited.</p>
+              <p class="text-xs text-slate-400">Click customer buttons in the exact order they will be visited.</p>
             </div>
             <button onclick="document.getElementById('cust-select-modal').remove()" class="text-slate-400 hover:text-slate-600 text-lg">
               <i class="fa-solid fa-xmark"></i>
@@ -352,22 +354,20 @@ const TransportModule = {
               </div>
             </div>
 
-            <!-- Customer Checklist -->
+            <!-- Customer Search Input -->
             <div>
-              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Available Customer List (Click to Add/Remove):</label>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-700 p-2 rounded-xl">
-                ${customers.map(c => {
-                  const seqObj = this.selectedCustomerSeq.find(s => s.customer_id === c.id || s.hotel_name === c.hotel_name);
-                  const isSelected = !!seqObj;
-                  const orderNum = isSelected ? seqObj.visit_order : '';
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Customer List (Click Button to Add/Remove):</label>
+                <span class="text-[10px] text-slate-400 font-semibold">Click order = Visit sequence</span>
+              </div>
+              <div class="relative mb-2">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                <input type="text" id="cust-search-input" oninput="TransportModule.filterCustomerButtons(this.value)" placeholder="Search customer by name..." class="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-700 rounded-xl text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 font-medium" />
+              </div>
 
-                  return `
-                    <button type="button" onclick="TransportModule.toggleCustomerSelection('${c.id}', '${c.hotel_name.replace(/'/g, "\\'")}')" class="p-2.5 rounded-xl text-left border text-xs font-medium flex items-center justify-between transition-all ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:bg-slate-100'}">
-                      <span class="truncate">${c.hotel_name}</span>
-                      ${isSelected ? `<span class="w-5 h-5 rounded-full bg-white text-indigo-600 font-extrabold text-[10px] flex items-center justify-center shrink-0 ml-2">${orderNum}</span>` : `<i class="fa-regular fa-square text-slate-400"></i>`}
-                    </button>
-                  `;
-                }).join('')}
+              <!-- Customer Buttons Container (No checkboxes, whole button clickable) -->
+              <div id="cust-buttons-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl bg-slate-50/50 dark:bg-slate-900/30">
+                ${this.renderCustomerButtonsHTML()}
               </div>
             </div>
 
@@ -392,13 +392,48 @@ const TransportModule = {
     this.renderSequenceBadges();
   },
 
+  renderCustomerButtonsHTML(query = '') {
+    const q = (query || '').toLowerCase().trim();
+    const filtered = this.allCustomersCache.filter(c => !q || (c.hotel_name || '').toLowerCase().includes(q));
+
+    if (filtered.length === 0) {
+      return `<div class="col-span-2 text-center text-xs text-slate-400 py-6">No matching customers found.</div>`;
+    }
+
+    return filtered.map(c => {
+      const seqObj = this.selectedCustomerSeq.find(s => s.customer_id === c.id || s.hotel_name === c.hotel_name);
+      const isSelected = !!seqObj;
+      const orderNum = isSelected ? seqObj.visit_order : '';
+
+      return `
+        <button type="button" 
+          onclick="TransportModule.toggleCustomerSelection('${c.id}', '${(c.hotel_name || '').replace(/'/g, "\\'")}')" 
+          class="p-3 rounded-xl text-left border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-md transform scale-[1.01]' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:border-indigo-300'}">
+          <span class="truncate pr-2">${c.hotel_name}</span>
+          ${isSelected ? `
+            <span class="w-6 h-6 rounded-full bg-white text-indigo-700 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm">#${orderNum}</span>
+          ` : `
+            <span class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 text-xs flex items-center justify-center shrink-0"><i class="fa-solid fa-plus text-[10px]"></i></span>
+          `}
+        </button>
+      `;
+    }).join('');
+  },
+
+  filterCustomerButtons(query) {
+    const grid = document.getElementById('cust-buttons-grid');
+    if (grid) {
+      grid.innerHTML = this.renderCustomerButtonsHTML(query);
+    }
+  },
+
   toggleCustomerSelection(cid, hotelName) {
     const idx = this.selectedCustomerSeq.findIndex(s => s.customer_id === cid || s.hotel_name === hotelName);
     if (idx >= 0) {
       // Remove from sequence
       this.selectedCustomerSeq.splice(idx, 1);
     } else {
-      // Add to sequence preserving click order
+      // Add to sequence preserving exact click time order
       this.selectedCustomerSeq.push({
         customer_id: cid,
         hotel_name: hotelName,
@@ -411,24 +446,16 @@ const TransportModule = {
       item.visit_order = index + 1;
     });
 
-    // Re-render modal elements
-    const modal = document.getElementById('cust-select-modal');
-    if (modal) {
-      const tripId = modal.querySelector('h3').textContent.match(/ST-\d+/)?.[0];
-      modal.remove();
-      // Re-open modal with updated sequence state
-      const findTrip = DB.getTrips().then(trips => {
-        const t = trips.find(x => x.trip_id === tripId);
-        if (t) {
-          t.selected_customers = this.selectedCustomerSeq;
-          this.openCustomerSelectionModal(t.id);
-        }
-      });
-    }
+    // Update Customer Buttons Grid & Badges dynamically without closing modal
+    const searchVal = document.getElementById('cust-search-input')?.value || '';
+    this.filterCustomerButtons(searchVal);
+    this.renderSequenceBadges();
   },
 
   clearCustomerSequence() {
     this.selectedCustomerSeq = [];
+    const searchVal = document.getElementById('cust-search-input')?.value || '';
+    this.filterCustomerButtons(searchVal);
     this.renderSequenceBadges();
   },
 
@@ -437,13 +464,13 @@ const TransportModule = {
     if (!badgeContainer) return;
 
     if (this.selectedCustomerSeq.length === 0) {
-      badgeContainer.innerHTML = `<span class="text-slate-400 text-[11px] italic">No customers selected yet. Click customers below to add to visit order.</span>`;
+      badgeContainer.innerHTML = `<span class="text-slate-400 text-[11px] italic">No customers selected yet. Click customer buttons below to add to visit order.</span>`;
       return;
     }
 
     badgeContainer.innerHTML = this.selectedCustomerSeq.map((c, i) => `
-      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-lg text-xs font-bold border border-indigo-200 dark:border-indigo-800 shadow-xs">
-        <span class="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-extrabold">${c.visit_order}</span>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-lg text-xs font-bold border border-indigo-200 dark:border-indigo-800 shadow-xs animate-fade-in">
+        <span class="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-extrabold">#${c.visit_order}</span>
         ${c.hotel_name}
         ${i < this.selectedCustomerSeq.length - 1 ? `<i class="fa-solid fa-arrow-right text-[10px] text-indigo-400 ml-1"></i>` : ''}
       </span>
@@ -470,19 +497,26 @@ const TransportModule = {
   },
 
   // ──────────────────────────────────────────
-  // STEP 14-19: END / COMPLETE TRIP MODAL
+  // STEP 14-19: END / COMPLETE TRIP MODAL (Includes Customer Selection Option)
   // ──────────────────────────────────────────
   async openEndTripModal(tripDbId) {
-    const trip = await DB.getTrip(tripDbId);
+    const [trip, customers] = await Promise.all([
+      DB.getTrip(tripDbId),
+      DB.getCustomers()
+    ]);
+
     if (!trip) return;
+
+    this.allCustomersCache = customers || [];
+    this.selectedCustomerSeq = trip.selected_customers ? [...trip.selected_customers] : [];
 
     const todayDate = new Date().toISOString().split('T')[0];
     const defaultEndTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const html = `
       <div id="end-trip-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] flex flex-col">
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 shrink-0">
             <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-flag-checkered text-emerald-600"></i> Complete Trip (${trip.trip_id})
             </h3>
@@ -491,18 +525,41 @@ const TransportModule = {
             </button>
           </div>
 
-          <!-- Trip Overview Banner -->
-          <div class="bg-slate-100 dark:bg-slate-700/50 p-3 rounded-xl text-xs space-y-1">
-            <div class="flex justify-between text-slate-600 dark:text-slate-300">
-              <span>Driver: <strong>${trip.driver_name}</strong></span>
-              <span>Starting KM: <strong class="text-indigo-600 font-mono">${trip.starting_km} KM</strong></span>
+          <form onsubmit="TransportModule.saveEndTrip(event, '${trip.id}')" class="space-y-4 text-left overflow-y-auto flex-1 pr-1">
+            <!-- Trip Overview Banner -->
+            <div class="bg-slate-100 dark:bg-slate-700/50 p-3 rounded-xl text-xs space-y-1">
+              <div class="flex justify-between text-slate-600 dark:text-slate-300">
+                <span>Driver: <strong>${trip.driver_name}</strong></span>
+                <span>Starting KM: <strong class="text-indigo-600 font-mono">${trip.starting_km} KM</strong></span>
+              </div>
+              <div class="flex justify-between text-slate-500">
+                <span>Start: ${trip.start_date} @ ${trip.start_time}</span>
+              </div>
             </div>
-            <div class="flex justify-between text-slate-500">
-              <span>Start: ${trip.start_date} @ ${trip.start_time}</span>
-            </div>
-          </div>
 
-          <form onsubmit="TransportModule.saveEndTrip(event, '${trip.id}')" class="space-y-4 text-left">
+            <!-- Customer Visit Sequence Section (Available directly in End Trip flow) -->
+            <div class="bg-indigo-50/70 dark:bg-indigo-950/40 p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-800/50 space-y-3">
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-indigo-900 dark:text-indigo-200">Visited Customers & Sequence Order:</label>
+                <button type="button" onclick="TransportModule.clearCustomerSequence()" class="text-[10px] text-rose-600 hover:underline">Reset Order</button>
+              </div>
+
+              <!-- Sequence badges -->
+              <div id="cust-seq-badge-list" class="flex flex-wrap items-center gap-1.5 min-h-[30px]"></div>
+
+              <!-- Customer Search Input -->
+              <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                <input type="text" id="cust-search-input" oninput="TransportModule.filterCustomerButtons(this.value)" placeholder="🔍 Search customer to add/update..." class="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-700 rounded-xl text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 font-medium" />
+              </div>
+
+              <!-- Customer Buttons Grid -->
+              <div id="cust-buttons-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto border border-slate-200 dark:border-slate-700 p-2 rounded-xl bg-white dark:bg-slate-800">
+                ${this.renderCustomerButtonsHTML()}
+              </div>
+            </div>
+
+            <!-- End Trip Readings -->
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">End Date *</label>
@@ -525,7 +582,13 @@ const TransportModule = {
               <span id="distance-val-text" class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">0 KM</span>
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+            <!-- Optional Trip Notes -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Trip Notes (Optional)</label>
+              <textarea id="trip-notes-input" rows="2" placeholder="Optional final trip remarks..." class="w-full px-3 py-2 text-xs bg-white dark:bg-slate-700 rounded-xl text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600">${trip.notes || ''}</textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700 shrink-0">
               <button type="button" onclick="document.getElementById('end-trip-modal').remove()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancel</button>
               <button type="submit" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm flex items-center gap-1.5">
                 <i class="fa-solid fa-check"></i> Complete & Save Trip
@@ -537,6 +600,7 @@ const TransportModule = {
     `;
 
     document.body.insertAdjacentHTML('beforeend', html);
+    this.renderSequenceBadges();
   },
 
   calcDistancePreview(startKm) {
@@ -560,6 +624,8 @@ const TransportModule = {
     const endDate = document.getElementById('trip-end-date').value;
     const endTime = document.getElementById('trip-end-time').value;
     const finalKm = parseFloat(document.getElementById('trip-final-km').value) || 0;
+    const notesInput = document.getElementById('trip-notes-input');
+    const notes = notesInput ? notesInput.value : '';
 
     const trip = await DB.getTrip(tripDbId);
     if (!trip) return;
@@ -576,10 +642,12 @@ const TransportModule = {
       end_time: endTime,
       final_km: finalKm,
       distance_km: distanceKm,
+      selected_customers: this.selectedCustomerSeq,
+      notes: notes,
       status: 'Completed'
     });
 
-    await DB.logAction('End Trip', `Completed trip ${trip.trip_id} (Distance: ${distanceKm} KM)`, { trip_id: trip.trip_id, distance_km: distanceKm }, 'Transport');
+    await DB.logAction('End Trip', `Completed trip ${trip.trip_id} (Distance: ${distanceKm} KM)`, { trip_id: trip.trip_id, distance_km: distanceKm, selected_customers: this.selectedCustomerSeq }, 'Transport');
 
     document.getElementById('end-trip-modal').remove();
     showToast(`Trip ${trip.trip_id} completed! Distance: ${distanceKm} KM`);
@@ -594,7 +662,7 @@ const TransportModule = {
     if (trip.selected_customers && trip.selected_customers.length > 0) {
       custHTML = trip.selected_customers.map(c => `
         <div class="flex items-center gap-2 text-xs py-1 border-b border-slate-100 dark:border-slate-700">
-          <span class="w-5 h-5 rounded-full bg-indigo-600 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0">${c.visit_order}</span>
+          <span class="w-5 h-5 rounded-full bg-indigo-600 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0">#${c.visit_order}</span>
           <span class="font-bold text-slate-800 dark:text-white">${c.hotel_name}</span>
         </div>
       `).join('');
