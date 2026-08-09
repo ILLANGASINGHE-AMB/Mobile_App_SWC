@@ -676,19 +676,15 @@ const DB = {
     }
     try {
       const val = await DB.getSetting('chemical_master_list');
-      if (val) return JSON.parse(val);
+      if (val) {
+        const parsed = JSON.parse(val);
+        // Filter out old seed defaults if present
+        const filtered = parsed.filter(c => !['CHM-0001', 'CHM-0002', 'CHM-0003', 'CHM-0004', 'CHM-0005'].includes(c.chemical_id) || c.user_added);
+        return filtered;
+      }
     } catch(e) {}
 
-    // Default pre-seeded chemicals from Expenses.md
-    const seed = [
-      { id: 1, chemical_id: 'CHM-0001', name: 'Supermat', unit: 'kg', package_size: '5 kg', status: 'Active', created_at: new Date().toISOString() },
-      { id: 2, chemical_id: 'CHM-0002', name: 'Oxalic Acid', unit: 'kg', package_size: '5 kg', status: 'Active', created_at: new Date().toISOString() },
-      { id: 3, chemical_id: 'CHM-0003', name: 'Organic Chlorine Bleach', unit: 'kg', package_size: '10 kg', status: 'Active', created_at: new Date().toISOString() },
-      { id: 4, chemical_id: 'CHM-0004', name: 'Emolshi Fire', unit: 'ml', package_size: '1000 ml', status: 'Active', created_at: new Date().toISOString() },
-      { id: 5, chemical_id: 'CHM-0005', name: 'Safna', unit: 'ml', package_size: '1000 ml', status: 'Active', created_at: new Date().toISOString() }
-    ];
-    await DB.setSetting('chemical_master_list', JSON.stringify(seed));
-    return seed;
+    return [];
   },
   async addChemical(data) {
     let nextId = 'CHM-0001';
@@ -710,6 +706,7 @@ const DB = {
       unit: data.unit || 'kg',
       package_size: data.package_size || '',
       status: data.status || 'Active',
+      user_added: true,
       created_at: new Date().toISOString()
     };
 
