@@ -276,6 +276,7 @@ document.addEventListener('keydown', e => {
   switch(e.key) {
     // Navigation — Alt + letter
     case 'd': if(e.altKey){e.preventDefault();navigate('dashboard');} break;
+    case 'a': if(e.altKey){e.preventDefault();navigate('analytics');} break;
     case 'o': if(e.altKey){e.preventDefault();navigate('orders');} break;
     case 'i': if(e.altKey){e.preventDefault();navigate('invoices');} break;
     case 'p': if(e.altKey){e.preventDefault();navigate('invoices');} break;

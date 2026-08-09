@@ -71,7 +71,7 @@ function isDriver() { return currentUser && currentUser.role === 'driver'; }
 
 function getRoleAllowedPages() {
   if (isAdmin()) {
-    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'invoices', 'deductions', 'items', 'expenses', 'reports', 'recent-actions', 'settings'];
+    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'invoices', 'deductions', 'items', 'expenses', 'analytics', 'reports', 'recent-actions', 'settings'];
   }
   if (isStaffUser()) {
     return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'deductions', 'items', 'expenses', 'settings'];
@@ -206,7 +206,7 @@ function navigate(page) {
   const titles = {
     dashboard: 'Dashboard', customers: 'Customers', drivers: 'Drivers', transport: 'Transport & Trip Management',
     orders: 'Orders', paynow: 'Pay Now', invoices: 'Invoices', payments: 'Payments',
-    items: 'Items', expenses: 'Expenses & Chemical Register', reports: 'Reports', settings: 'Settings', deductions: 'Deductions',
+    items: 'Items', expenses: 'Expenses & Chemical Register', analytics: 'Data Analytics', reports: 'Reports', settings: 'Settings', deductions: 'Deductions',
     'recent-actions': 'Recent Actions'
   };
   document.getElementById('page-title').textContent = titles[page] || page;
@@ -222,6 +222,7 @@ function navigate(page) {
     payments:  renderInvoices,
     items:     renderItems,
     expenses:  renderExpensesPage,
+    analytics: () => { if (!isAdmin()) { navigate('dashboard'); } else { renderAnalytics(); } },
     reports:   () => { if (!requireAdmin()) { navigate('dashboard'); } else { renderReports(); } },
     settings:  renderSettings,
     deductions: renderDeductions,
