@@ -478,13 +478,10 @@ const ExpensesModule = {
       DB.getChemicalLedger()
     ]);
 
-    // Calculate Totals
-    let totalRevenue = 0;
-    orders.forEach(o => {
-      if (o.status === 'Paid') {
-        totalRevenue += parseFloat(o.total_amount || 0);
-      }
-    });
+    // Calculate Dashboard Aligned Totals
+    const curMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+    const monthlyIncome = orders.filter(o => (o.created_at || '').startsWith(curMonth)).reduce((s, o) => s + parseFloat(o.total_amount || 0), 0);
+    const totalIncome = orders.reduce((s, o) => s + parseFloat(o.total_amount || 0), 0);
 
     let totalChemPurchases = 0;
     chemLogs.forEach(l => {
@@ -503,8 +500,7 @@ const ExpensesModule = {
     const totalCashOutlay = totalChemPurchases + totalGeneralExpenses;
     const totalAveragedExpenses = totalChemPurchases + totalAveragedGeneral;
 
-    const netProfitCash = totalRevenue - totalCashOutlay;
-    const netProfitAveraged = totalRevenue - totalAveragedExpenses;
+    const monthlyNetProfit = monthlyIncome - totalAveragedExpenses;
 
     container.innerHTML = `
       <div class="space-y-6">
@@ -513,28 +509,39 @@ const ExpensesModule = {
           <h2 class="text-xl font-extrabold flex items-center gap-2">
             <i class="fa-solid fa-chart-line text-indigo-400"></i> Financial Balance & Operating Margin Summary
           </h2>
-          <p class="text-xs text-indigo-200 mt-1">Comparing Gross Invoiced Revenue against Total Expenses & Monthly Averaged Expenditures.</p>
+          <p class="text-xs text-indigo-200 mt-1">Comparing Monthly Income against Expenses & Monthly Averaged Expenditures.</p>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-6">
             <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
-              <div class="text-xs font-semibold text-indigo-200 uppercase">Gross Sales Revenue</div>
-              <div class="text-2xl font-black text-emerald-400 mt-1">
-                LKR ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              <div class="text-xs font-semibold text-indigo-200 uppercase">Monthly Income</div>
+              <div class="text-xl font-black text-emerald-400 mt-1">
+                LKR ${monthlyIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
+              <div class="text-[10px] text-indigo-300 mt-0.5">Matches Dashboard</div>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
+              <div class="text-xs font-semibold text-indigo-200 uppercase">Total Income (All-Time)</div>
+              <div class="text-xl font-black text-cyan-400 mt-1">
+                LKR ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </div>
+              <div class="text-[10px] text-indigo-300 mt-0.5">Matches Dashboard</div>
             </div>
 
             <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
               <div class="text-xs font-semibold text-indigo-200 uppercase">Total Cash Expenses</div>
-              <div class="text-2xl font-black text-rose-400 mt-1">
+              <div class="text-xl font-black ${totalCashOutlay > 0 ? 'text-rose-400' : 'text-slate-300'} mt-1">
                 LKR ${totalCashOutlay.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
+              <div class="text-[10px] text-indigo-300 mt-0.5">${totalCashOutlay === 0 ? 'No expenses added yet' : 'Actual Outflow'}</div>
             </div>
 
             <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
-              <div class="text-xs font-semibold text-indigo-200 uppercase">Net Operating Profit (Averaged)</div>
-              <div class="text-2xl font-black ${netProfitAveraged >= 0 ? 'text-emerald-300' : 'text-rose-300'} mt-1">
-                LKR ${netProfitAveraged.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              <div class="text-xs font-semibold text-indigo-200 uppercase">Monthly Net Profit</div>
+              <div class="text-xl font-black ${monthlyNetProfit >= 0 ? 'text-emerald-300' : 'text-rose-300'} mt-1">
+                LKR ${monthlyNetProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
+              <div class="text-[10px] text-indigo-300 mt-0.5">Income - Expenses</div>
             </div>
           </div>
         </div>
