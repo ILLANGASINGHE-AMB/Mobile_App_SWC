@@ -62,25 +62,51 @@ function updateRoleChip() {
   applyRoleSidebarRestrictions();
 }
 
+// ─────────────────────────────────────────────
+// ROLE-BASED ACCESS CONTROL (RBAC) HELPERS
+// ─────────────────────────────────────────────
+function isAdmin() { return currentUser && currentUser.role === 'admin'; }
+function isStaffUser() { return currentUser && currentUser.role === 'user'; }
+function isDriver() { return currentUser && currentUser.role === 'driver'; }
+
+function getRoleAllowedPages() {
+  if (isAdmin()) {
+    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'invoices', 'deductions', 'items', 'expenses', 'reports', 'recent-actions', 'settings'];
+  }
+  if (isStaffUser()) {
+    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'deductions', 'items', 'expenses', 'settings'];
+  }
+  if (isDriver()) {
+    return ['transport', 'customers', 'orders', 'settings'];
+  }
+  return ['dashboard', 'settings'];
+}
+
+function canDelete() { return isAdmin(); }
+function canAddOrders() { return isAdmin() || isStaffUser(); }
+function canEditOrders() { return isAdmin() || isStaffUser(); }
+function canEditCustomers() { return true; } // Admin, Staff User, Driver all can add/edit customers
+function canEditDrivers() { return isAdmin() || isStaffUser(); }
+function canEditTransport() { return isAdmin() || isDriver(); }
+function canEditPayNow() { return isAdmin() || isStaffUser(); }
+function canEditItems() { return isAdmin() || isStaffUser(); }
+function canEditExpenses() { return isAdmin() || isStaffUser(); }
+function canUseQuotation() { return isAdmin(); }
+function canPrintCatalogue() { return isAdmin(); }
+function canBackupRestore() { return isAdmin(); }
+
 function applyRoleSidebarRestrictions() {
   if (!currentUser) return;
-  const isDriver = currentUser.role === 'driver';
+  const allowed = getRoleAllowedPages();
 
   document.querySelectorAll('nav.sidebar-nav a').forEach(a => {
     const page = a.dataset.page;
-    if (isDriver) {
-      if (['transport', 'customers', 'settings'].includes(page)) {
-        a.style.display = 'flex';
-      } else {
-        a.style.display = 'none';
-      }
-    } else {
-      a.style.display = 'flex';
-    }
+    a.style.display = allowed.includes(page) ? 'flex' : 'none';
   });
 
-  if (isDriver && !['transport', 'customers', 'settings'].includes(currentPage)) {
-    navigate('transport');
+  if (!allowed.includes(currentPage)) {
+    const defaultPage = isDriver() ? 'transport' : 'dashboard';
+    navigate(defaultPage);
   }
 }
 
@@ -105,7 +131,7 @@ async function initApp() {
   await applySettings();
   updateTopbarDate();
   setInterval(updateTopbarDate, 60000);
-  if (currentUser && currentUser.role === 'driver') {
+  if (isDriver()) {
     navigate('transport');
   } else {
     navigate('dashboard');
@@ -165,8 +191,9 @@ async function applySettings() {
 // NAVIGATION
 // ─────────────────────────────────────────────
 function navigate(page) {
-  if (currentUser && currentUser.role === 'driver' && !['transport', 'customers', 'settings'].includes(page)) {
-    page = 'transport';
+  const allowed = getRoleAllowedPages();
+  if (!allowed.includes(page)) {
+    page = isDriver() ? 'transport' : 'dashboard';
   }
   currentPage = page;
   Object.values(dashCharts).forEach(c => { try { c.destroy(); } catch(e){} });

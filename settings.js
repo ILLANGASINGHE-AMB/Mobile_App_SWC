@@ -14,12 +14,12 @@ async function renderSettings() {
   const isUndoVisible = showUndo !== 'false';
   const isAIFabVisible = showAIFab !== 'false';
 
-  // Staff sees only Appearance + Upload to Cloud
+  // Staff & Driver see only Appearance (Text size, Dark/Light mode)
   // Admin sees everything
   if (!isAdmin()) {
     document.getElementById('content').innerHTML = `
       <div class="section-header"><span class="section-title">Settings</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div style="max-width:600px;">
 
         <!-- Appearance -->
         <div class="card">
@@ -32,7 +32,7 @@ async function renderSettings() {
               ${['sm','md','lg','xl'].map(s => `<button class="btn ${textSize===s?'btn-primary':'btn-secondary'}" onclick="setTextSize('${s}')" id="ts-${s}">${{sm:'Small',md:'Medium',lg:'Large',xl:'XL'}[s]}</button>`).join('')}
             </div>
           </div>
-          <div class="form-group" style="margin-top:12px;">
+          <div class="form-group" style="margin-top:16px;">
             <label class="form-label">Dark Mode</label>
             <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
               <label class="toggle">
@@ -41,25 +41,7 @@ async function renderSettings() {
               </label>
               <span id="dark-mode-label" style="font-size:0.9em;">${darkMode==='true'?'Dark Mode':'Light Mode'}</span>
             </div>
-          <div class="form-group" style="margin-top:16px; border-top:1.5px dashed var(--border); padding-top:12px;">
-            <label class="form-label">Show SAGA AI Floating Button</label>
-            <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
-              <label class="toggle">
-                <input type="checkbox" class="ai-fab-toggle" ${isAIFabVisible?'checked':''} onchange="toggleAIFabFromSettings(this.checked)"/>
-                <span class="toggle-slider"></span>
-              </label>
-              <span class="ai-fab-toggle-label" style="font-size:0.9em;">${isAIFabVisible?'Visible':'Hidden'}</span>
-            </div>
           </div>
-        </div>
-
-        <!-- Upload to Cloud only -->
-        <div class="card">
-          <div style="font-family:'Playfair Display',serif;font-weight:700;margin-bottom:16px;font-size:1.05em;">
-            <i class="fas fa-cloud-upload-alt" style="color:var(--primary);margin-right:8px;"></i>Cloud Sync
-          </div>
-          <div style="font-size:0.83em;color:var(--text-muted);margin-bottom:14px;">Push the current database to your cloud server endpoint.</div>
-          <button class="btn btn-primary" onclick="uploadToCloud()"><i class="fas fa-cloud-upload-alt"></i> Upload to Cloud</button>
         </div>
 
       </div>`;

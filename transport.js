@@ -27,9 +27,11 @@ const TransportModule = {
             </p>
           </div>
           
-          <button onclick="TransportModule.openStartTripModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm flex items-center gap-2">
-            <i class="fa-solid fa-plus-circle"></i> New Trip
-          </button>
+          ${canEditTransport() ? `
+            <button onclick="TransportModule.openStartTripModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs sm:text-sm transition-all shadow-sm flex items-center gap-2">
+              <i class="fa-solid fa-plus-circle"></i> New Trip
+            </button>
+          ` : ''}
         </div>
 
         <!-- Summary Stats Cards -->
@@ -138,21 +140,36 @@ const TransportModule = {
           <div class="text-[10px] text-slate-400">Trip Active</div>
         `;
 
-        const actionButtons = !isCompleted ? `
-          <button onclick="TransportModule.openCustomerSelectionModal('${t.id}')" class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 rounded-lg text-xs font-semibold flex items-center gap-1">
-            <i class="fa-solid fa-list-check"></i> Customers
-          </button>
-          <button onclick="TransportModule.openEndTripModal('${t.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
-            <i class="fa-solid fa-flag-checkered"></i> End Trip
-          </button>
-        ` : `
-          <button onclick="TransportModule.viewTripDetails('${t.id}')" class="px-2 py-1 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-xs font-medium">
-            <i class="fa-solid fa-eye"></i> Details
-          </button>
-          <button onclick="TransportModule.deleteTrip('${t.id}')" class="px-2 py-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-xs font-medium">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
-        `;
+        let actionButtons = '';
+        if (!isCompleted) {
+          if (canEditTransport()) {
+            actionButtons = `
+              <button onclick="TransportModule.openCustomerSelectionModal('${t.id}')" class="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 rounded-lg text-xs font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-list-check"></i> Customers
+              </button>
+              <button onclick="TransportModule.openEndTripModal('${t.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm">
+                <i class="fa-solid fa-flag-checkered"></i> End Trip
+              </button>
+            `;
+          } else {
+            actionButtons = `
+              <button onclick="TransportModule.viewTripDetails('${t.id}')" class="px-2 py-1 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-xs font-medium">
+                <i class="fa-solid fa-eye"></i> Details
+              </button>
+            `;
+          }
+        } else {
+          actionButtons = `
+            <button onclick="TransportModule.viewTripDetails('${t.id}')" class="px-2 py-1 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-xs font-medium">
+              <i class="fa-solid fa-eye"></i> Details
+            </button>
+            ${canDelete() ? `
+              <button onclick="TransportModule.deleteTrip('${t.id}')" class="px-2 py-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-xs font-medium">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            ` : ''}
+          `;
+        }
 
         rowsHTML += `
           <tr class="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition-colors border-b border-slate-200 dark:border-slate-700">

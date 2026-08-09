@@ -25,7 +25,7 @@ async function renderOrders() {
     <div class="section-header">
       <span class="section-title">Orders</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="showAddOrderModal()"><i class="fas fa-plus"></i> New Order</button>
+        ${canAddOrders() ? `<button class="btn btn-primary" onclick="showAddOrderModal()"><i class="fas fa-plus"></i> New Order</button>` : ''}
       </div>
     </div>
 
@@ -140,7 +140,7 @@ async function _refreshOrdersTable() {
           <td>
             <div style="display:flex;gap:5px;flex-wrap:nowrap;white-space:nowrap;">
               <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails(${o.id})"><i class="fas fa-eye"></i> View</button>
-              <button class="btn btn-primary btn-sm"   onclick="showEditOrderModal(${o.id})"><i class="fas fa-edit"></i> Edit</button>
+              ${canEditOrders() ? `<button class="btn btn-primary btn-sm" onclick="showEditOrderModal(${o.id})"><i class="fas fa-edit"></i> Edit</button>` : ''}
               <button class="btn btn-success btn-sm"   onclick="printInvoiceByOrder(${o.id})" style="background:#10b981;border-color:#10b981;color:#fff;"><i class="fas fa-print"></i> Print</button>
               <button class="btn btn-sm" onclick="showOrderQR(${o.id})" title="Show QR Code for delivery confirmation" style="background:#7c3aed;border-color:#6d28d9;color:#fff;"><i class="fas fa-qrcode"></i> QR</button>
               ${isAdmin() ? `<button class="btn btn-danger btn-sm" onclick="deleteOrderConfirm(${o.id})"><i class="fas fa-trash"></i> Delete</button>` : ''}

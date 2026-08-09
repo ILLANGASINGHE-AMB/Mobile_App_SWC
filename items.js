@@ -22,13 +22,13 @@ async function renderItems() {
     <div class="section-header">
       <span class="section-title">Items Catalog</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="showGenerateQuotationModal()"><i class="fas fa-file-invoice"></i> Generate Quotation</button>
-        <button class="btn btn-secondary" onclick="showDefaultTermsModal()"><i class="fas fa-file-contract"></i> Terms &amp; Conditions</button>
+        ${canUseQuotation()?'<button class="btn btn-primary" onclick="showGenerateQuotationModal()"><i class="fas fa-file-invoice"></i> Generate Quotation</button>':''}
+        ${canUseQuotation()?'<button class="btn btn-secondary" onclick="showDefaultTermsModal()"><i class="fas fa-file-contract"></i> Terms &amp; Conditions</button>':''}
         ${isAdmin()?'<button class="btn btn-secondary" onclick="printItemsCatalog()"><i class="fas fa-print"></i> Print Catalog</button>':''}
         ${isAdmin()?'<button class="btn btn-secondary" onclick="exportItems()"><i class="fas fa-download"></i> Backup</button>':''}
         ${isAdmin()?'<button class="btn btn-secondary" onclick="document.getElementById(\'items-import-file\').click()"><i class="fas fa-upload"></i> Import</button>':''}
         <input type="file" id="items-import-file" accept=".json" style="display:none" onchange="importItems(this)"/>
-        ${isAdmin()?'<button class="btn btn-primary" onclick="showAddItemModal()"><i class="fas fa-plus"></i> Add Item</button>':''}
+        ${canEditItems()?'<button class="btn btn-primary" onclick="showAddItemModal()"><i class="fas fa-plus"></i> Add Item</button>':''}
       </div>
     </div>
     <div id="items-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px;"></div>
@@ -114,9 +114,8 @@ async function _refreshItemsTable() {
         <td style="text-align:right;"><span class="badge badge-cyan">${formatCurrency(item.wash_press_price||0)}</span></td>
         <td style="text-align:right;"><span class="badge badge-green">${formatCurrency(item.wash_dry_price||0)}</span></td>
         <td><div style="display:flex;gap:6px;">
-          ${isAdmin()?`<button class="btn btn-primary btn-sm" onclick="showEditItemModal(${item.id})"><i class="fas fa-edit"></i></button>
-          <button class="btn btn-danger btn-sm" onclick="deleteItemConfirm(${item.id})"><i class="fas fa-trash"></i></button>`
-          :`<span style="font-size:0.78em;color:var(--text-muted);">View only</span>`}
+          ${canEditItems()?`<button class="btn btn-primary btn-sm" onclick="showEditItemModal(${item.id})"><i class="fas fa-edit"></i></button>`:''}
+          ${canDelete()?`<button class="btn btn-danger btn-sm" onclick="deleteItemConfirm(${item.id})"><i class="fas fa-trash"></i></button>`:''}
         </div></td>
       </tr>`).join('');
 
@@ -127,10 +126,10 @@ async function _refreshItemsTable() {
 function changeItemsPage(p){itemsPage=p;renderItems();}
 
 // ─────────────────────────────────────────────
-// ADD ITEM (Admin only)
+// ADD ITEM
 // ─────────────────────────────────────────────
 async function showAddItemModal() {
-  if(!requireAdmin()) return;
+  if(!canEditItems()) return;
   createModal('add-item-modal','Add New Item',`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
       <div class="form-group">
@@ -195,7 +194,7 @@ async function saveNewItem() {
 // EDIT ITEM (Admin only)
 // ─────────────────────────────────────────────
 async function showEditItemModal(id) {
-  if(!requireAdmin()) return;
+  if(!canEditItems()) return;
   const item = await DB.getItem(id); if(!item) return;
   createModal('edit-item-modal',`Edit Item: ${item.item_id}`,`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">

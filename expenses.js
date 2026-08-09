@@ -317,9 +317,11 @@ const ExpensesModule = {
               <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded text-[11px]">${exp.payment_method || 'Cash'}</span>
             </td>
             <td class="px-4 py-3 text-xs text-center">
-              <button onclick="ExpensesModule.deleteGeneralExpense('${exp.id}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors" title="Delete Expense">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
+              ${canDelete() ? `
+                <button onclick="ExpensesModule.deleteGeneralExpense('${exp.id}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors" title="Delete Expense">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              ` : ''}
             </td>
           </tr>
         `;
@@ -423,9 +425,11 @@ const ExpensesModule = {
             </span>
           </td>
           <td class="px-4 py-3 text-xs text-center">
-            <button onclick="ExpensesModule.deleteChemical('${c.id}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
+            ${canDelete() ? `
+              <button onclick="ExpensesModule.deleteChemical('${c.id}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            ` : ''}
           </td>
         </tr>
       `;
