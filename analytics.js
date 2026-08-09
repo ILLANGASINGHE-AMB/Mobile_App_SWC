@@ -413,14 +413,31 @@ async function calculateAnalyticsData(filters) {
 
   // Item Analytics
   const itemStatsMap = {};
-  filteredOrderItems.forEach(oi => {
-    const code = oi.item_id || oi.catalog_item_id || 'MISC';
-    const name = oi.item_name || 'Laundry Service';
-    if (!itemStatsMap[code]) {
-      itemStatsMap[code] = { code, name, qty: 0, revenue: 0 };
+  (filteredOrderItems || []).forEach(oi => {
+    const catId = oi.catalog_item_id || oi.item_id;
+    const catItem = (catalogItems || []).find(it => String(it.id) === String(catId) || String(it.item_id) === String(catId));
+
+    const code = catItem ? (catItem.item_id || `ITM-${catItem.id}`) : (oi.item_id || (oi.catalog_item_id ? `ITM-${oi.catalog_item_id}` : 'MISC'));
+    const name = oi.item_name || (catItem ? catItem.item_name : 'Laundry Service');
+
+    const qty = parseInt(oi.quantity, 10) || 1;
+    let rev = 0;
+    if (oi.subtotal !== undefined && oi.subtotal !== null && !isNaN(parseFloat(oi.subtotal))) {
+      rev = parseFloat(oi.subtotal);
+    } else if (oi.total_price !== undefined && oi.total_price !== null && !isNaN(parseFloat(oi.total_price))) {
+      rev = parseFloat(oi.total_price);
+    } else if (oi.price !== undefined && oi.price !== null && !isNaN(parseFloat(oi.price))) {
+      rev = parseFloat(oi.price) * qty;
+    } else if (oi.unit_price !== undefined && oi.unit_price !== null && !isNaN(parseFloat(oi.unit_price))) {
+      rev = parseFloat(oi.unit_price) * qty;
     }
-    itemStatsMap[code].qty += (parseInt(oi.quantity, 10) || 0);
-    itemStatsMap[code].revenue += (parseFloat(oi.total_price) || 0);
+
+    const key = code + '||' + name;
+    if (!itemStatsMap[key]) {
+      itemStatsMap[key] = { code, name, qty: 0, revenue: 0 };
+    }
+    itemStatsMap[key].qty += qty;
+    itemStatsMap[key].revenue += rev;
   });
 
   const itemStatsList = Object.values(itemStatsMap).sort((a, b) => b.revenue - a.revenue);
@@ -703,8 +720,8 @@ function renderTopItemsChart(d) {
   const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
   const textColor = isDark ? '#94a3b8' : '#64748b';
 
-  const topItems = d.itemStatsList.slice(0, 8);
-  const labels = topItems.map(i => i.name.length > 15 ? i.name.substring(0, 15) + '...' : i.name);
+  const topItems = (d.itemStatsList || []).slice(0, 8);
+  const labels = topItems.map(i => i.name.length > 18 ? i.name.substring(0, 18) + '...' : i.name);
   const revenueData = topItems.map(i => i.revenue);
 
   analyticsCharts.topItems = new Chart(ctx, {
@@ -712,7 +729,7 @@ function renderTopItemsChart(d) {
     data: {
       labels,
       datasets: [{
-        label: 'Item Revenue (LKR)',
+        label: 'Revenue (LKR)',
         data: revenueData,
         backgroundColor: '#ec4899',
         borderRadius: 6
@@ -724,7 +741,15 @@ function renderTopItemsChart(d) {
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: c => `Revenue: LKR ${c.parsed.y.toLocaleString()}` } }
+        tooltip: {
+          callbacks: {
+            label: c => {
+              const val = c.parsed ? (c.parsed.x || 0) : 0;
+              const item = topItems[c.dataIndex];
+              return `Revenue: LKR ${val.toLocaleString()} (${item ? item.qty : 0} pcs)`;
+            }
+          }
+        }
       },
       scales: {
         x: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 }, callback: v => 'LKR ' + (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v) } },
