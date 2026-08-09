@@ -293,16 +293,26 @@ async function refreshAnalyticsView() {
   Object.values(analyticsCharts).forEach(c => { try { c.destroy(); } catch(e){} });
   analyticsCharts = {};
 
-  const data = await calculateAnalyticsData(analyticsFilterState);
-  window._analyticsExportData = data;
+  // Show loading state
+  const kpiEl = document.getElementById('an-kpi-cards');
+  const insEl = document.getElementById('an-insights-grid');
+  if (kpiEl) kpiEl.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin" style="font-size:1.5em;"></i><div style="margin-top:8px;font-size:0.85em;">Calculating analytics...</div></div>`;
 
-  renderKPICards(data);
-  renderBusinessInsights(data);
-  renderTrendChart(data);
-  renderDayOfWeekChart(data);
-  renderTopItemsChart(data);
-  renderExpenseCategoryChart(data);
-  renderTables(data);
+  try {
+    const data = await calculateAnalyticsData(analyticsFilterState);
+    window._analyticsExportData = data;
+
+    renderKPICards(data);
+    renderBusinessInsights(data);
+    renderTrendChart(data);
+    renderDayOfWeekChart(data);
+    renderTopItemsChart(data);
+    renderExpenseCategoryChart(data);
+    renderTables(data);
+  } catch(err) {
+    console.error('Analytics error:', err);
+    if (kpiEl) kpiEl.innerHTML = `<div style="grid-column:1/-1;padding:20px;background:#fee2e2;border-radius:10px;color:#b91c1c;font-size:0.88em;"><i class="fas fa-triangle-exclamation"></i> Failed to load analytics: ${err.message || err}</div>`;
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -311,7 +321,7 @@ async function refreshAnalyticsView() {
 async function calculateAnalyticsData(filters) {
   const [orders, allOrderItems, customers, catalogItems, generalExpenses, chemicalLedger] = await Promise.all([
     DB.getOrders(),
-    DB.getOrderItems ? DB.getOrderItems() : Promise.resolve([]),
+    DB.getAllOrderItems(),
     DB.getCustomers(),
     DB.getItems(),
     DB.getGeneralExpenses(),

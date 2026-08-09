@@ -115,6 +115,7 @@ const DB = {
 
   // ── Order Items ───────────────────────────
   async getOrderItems(orderId) { return _q(_sb.from('order_items').select('*').eq('order_id', orderId)); },
+  async getAllOrderItems() { return _q(_sb.from('order_items').select('*')); },
   async addOrderItem(data) {
     const rows = await _q(_sb.from('order_items').insert(data).select());
     return rows[0].id;
