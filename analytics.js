@@ -165,12 +165,12 @@ async function renderAnalytics() {
       <!-- Best Performing Customers -->
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <div style="font-weight:700;font-family:'Playfair Display',serif;font-size:1.05em;"><i class="fas fa-trophy" style="color:#f59e0b;margin-right:8px;"></i>Top Performing Customers</div>
+          <div style="font-weight:700;font-family:'Playfair Display',serif;font-size:1.05em;"><i class="fas fa-trophy" style="color:#f59e0b;margin-right:8px;"></i>Customer Performance</div>
           <span style="font-size:0.78em;color:var(--text-muted);" id="an-top-cust-count"></span>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap" style="max-height:420px;overflow-y:auto;">
           <table>
-            <thead>
+            <thead style="position:sticky;top:0;background:var(--bg);z-index:2;">
               <tr>
                 <th>Customer</th>
                 <th style="text-align:center;">Orders</th>
@@ -179,6 +179,7 @@ async function renderAnalytics() {
               </tr>
             </thead>
             <tbody id="an-tbl-top-customers"></tbody>
+            <tfoot id="an-tfoot-top-customers" style="position:sticky;bottom:0;background:var(--card-bg);border-top:2px solid var(--border);font-weight:700;"></tfoot>
           </table>
         </div>
       </div>
@@ -189,9 +190,9 @@ async function renderAnalytics() {
           <div style="font-weight:700;font-family:'Playfair Display',serif;font-size:1.05em;"><i class="fas fa-boxes-stacked" style="color:var(--primary);margin-right:8px;"></i>Item Breakdown</div>
           <span style="font-size:0.78em;color:var(--text-muted);" id="an-top-items-count"></span>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap" style="max-height:420px;overflow-y:auto;">
           <table>
-            <thead>
+            <thead style="position:sticky;top:0;background:var(--bg);z-index:2;">
               <tr>
                 <th>Item Code</th>
                 <th>Item Name</th>
@@ -200,6 +201,7 @@ async function renderAnalytics() {
               </tr>
             </thead>
             <tbody id="an-tbl-top-items"></tbody>
+            <tfoot id="an-tfoot-top-items" style="position:sticky;bottom:0;background:var(--card-bg);border-top:2px solid var(--border);font-weight:700;"></tfoot>
           </table>
         </div>
       </div>
@@ -798,40 +800,67 @@ function renderExpenseCategoryChart(d) {
 }
 
 function renderTables(d) {
-  // 1. Top Customers Table
+  // 1. Customers Table
   const custTbody = document.getElementById('an-tbl-top-customers');
+  const custTfoot = document.getElementById('an-tfoot-top-customers');
   const custCount = document.getElementById('an-top-cust-count');
   if (custCount) custCount.textContent = `${d.customerStatsList.length} clients`;
 
   if (custTbody) {
     custTbody.innerHTML = d.customerStatsList.length === 0
       ? `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">No client data</td></tr>`
-      : d.customerStatsList.slice(0, 8).map(c => `
+      : d.customerStatsList.map(c => `
         <tr>
           <td><strong>${c.name}</strong></td>
           <td style="text-align:center;"><span class="badge badge-purple">${c.orders}</span></td>
-          <td style="text-align:right;font-weight:700;">LKR ${c.revenue.toLocaleString()}</td>
+          <td style="text-align:right;font-weight:700;">LKR ${c.revenue.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
           <td style="text-align:right;color:var(--text-muted);font-size:0.88em;">LKR ${c.orders > 0 ? (c.revenue / c.orders).toLocaleString(undefined, {maximumFractionDigits:0}) : 0}</td>
         </tr>
       `).join('');
   }
 
-  // 2. Top Items Table
+  if (custTfoot && d.customerStatsList.length > 0) {
+    const totalOrders = d.customerStatsList.reduce((s, c) => s + c.orders, 0);
+    const totalCustRev = d.grossRevenue;
+    custTfoot.innerHTML = `
+      <tr>
+        <td style="padding:10px 16px;">Total (${d.customerStatsList.length} Clients)</td>
+        <td style="text-align:center;padding:10px 16px;"><span class="badge badge-purple">${totalOrders}</span></td>
+        <td style="text-align:right;padding:10px 16px;color:var(--primary);font-size:1em;">LKR ${totalCustRev.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+        <td style="text-align:right;padding:10px 16px;color:var(--text-muted);font-size:0.88em;">LKR ${totalOrders > 0 ? (totalCustRev / totalOrders).toLocaleString(undefined, {maximumFractionDigits:0}) : 0}</td>
+      </tr>
+    `;
+  }
+
+  // 2. Item Breakdown Table
   const itemTbody = document.getElementById('an-tbl-top-items');
+  const itemTfoot = document.getElementById('an-tfoot-top-items');
   const itemCount = document.getElementById('an-top-items-count');
   if (itemCount) itemCount.textContent = `${d.itemStatsList.length} items`;
 
   if (itemTbody) {
     itemTbody.innerHTML = d.itemStatsList.length === 0
       ? `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">No item data</td></tr>`
-      : d.itemStatsList.slice(0, 8).map(it => `
+      : d.itemStatsList.map(it => `
         <tr>
           <td><span style="font-family:monospace;font-weight:700;font-size:0.85em;background:var(--bg);padding:3px 6px;border-radius:4px;border:1px solid var(--border);">${it.code}</span></td>
           <td><strong>${it.name}</strong></td>
           <td style="text-align:center;"><span class="badge badge-cyan">${it.qty}</span></td>
-          <td style="text-align:right;font-weight:700;">LKR ${it.revenue.toLocaleString()}</td>
+          <td style="text-align:right;font-weight:700;">LKR ${it.revenue.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
         </tr>
       `).join('');
+  }
+
+  if (itemTfoot && d.itemStatsList.length > 0) {
+    const totalQty = d.itemStatsList.reduce((s, i) => s + i.qty, 0);
+    const totalItemRev = d.grossRevenue;
+    itemTfoot.innerHTML = `
+      <tr>
+        <td colspan="2" style="padding:10px 16px;">Total (${d.itemStatsList.length} Items)</td>
+        <td style="text-align:center;padding:10px 16px;"><span class="badge badge-cyan">${totalQty} pcs</span></td>
+        <td style="text-align:right;padding:10px 16px;color:var(--primary);font-size:1em;">LKR ${totalItemRev.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+      </tr>
+    `;
   }
 }
 
