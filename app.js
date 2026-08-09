@@ -25,13 +25,14 @@ async function doLogin() {
 
     await DB.logAction('User Login', `User "${currentUser.display_name}" logged in successfully`, { username: user.username, role: user.role }, 'User');
 
-    // Update topbar avatar & name
+    // Update topbar role chip
+    const roleNames = { admin: 'Admin', user: 'User', driver: 'Driver' };
     const avatar = document.getElementById('topbar-avatar');
     if (avatar) {
-      avatar.textContent = currentUser.display_name.charAt(0).toUpperCase();
-      avatar.title       = `${currentUser.display_name} (${currentUser.role})`;
+      const roleText = roleNames[currentUser.role] || 'User';
+      avatar.textContent = roleText;
+      avatar.title       = `${currentUser.display_name} (${roleText})`;
     }
-    // Show role chip in sidebar footer
     updateRoleChip();
     initApp();
     setTimeout(initGlobalSearch,300);
@@ -45,20 +46,15 @@ document.getElementById('login-pass').addEventListener('keydown', e => { if (e.k
 
 function updateRoleChip() {
   const footer = document.getElementById('sidebar-user-info');
-  if (!footer || !currentUser) return;
-  footer.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px 6px;">
-      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.95em;flex-shrink:0;">
-        ${currentUser.display_name.charAt(0).toUpperCase()}
-      </div>
-      <div>
-        <div style="color:#fff;font-size:0.85em;font-weight:600;">${currentUser.display_name}</div>
-        <span style="font-size:0.72em;padding:1px 8px;border-radius:99px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
-          ${currentUser.role === 'admin' ? 'background:#f0a500;color:#000;' : 'background:rgba(255,255,255,0.18);color:#fff;'}">
-          ${currentUser.role}
-        </span>
-      </div>
-    </div>`;
+  if (footer) footer.innerHTML = ''; // Removed from bottom of navigation bar per user request
+
+  const avatar = document.getElementById('topbar-avatar');
+  if (avatar && currentUser) {
+    const roleNames = { admin: 'Admin', user: 'User', driver: 'Driver' };
+    const roleText = roleNames[currentUser.role] || 'User';
+    avatar.textContent = roleText;
+    avatar.title       = `${currentUser.display_name} (${roleText})`;
+  }
   applyRoleSidebarRestrictions();
 }
 
