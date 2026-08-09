@@ -232,6 +232,16 @@ const TransportModule = {
     const tripId = await DB.generateTripId();
     const currentDriver = (window.currentUser && (window.currentUser.display_name || window.currentUser.username)) || 'Driver';
 
+    // Auto-calculate default Starting KM from the End KM of the previous trip
+    const trips = await DB.getTrips();
+    let defaultStartKm = '';
+    const previousTrip = trips.find(t => t.final_km !== null && t.final_km !== undefined) || trips[0];
+    if (previousTrip) {
+      defaultStartKm = previousTrip.final_km !== null && previousTrip.final_km !== undefined 
+        ? previousTrip.final_km 
+        : (previousTrip.starting_km || '');
+    }
+
     const html = `
       <div id="start-trip-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
         <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4">
@@ -269,8 +279,8 @@ const TransportModule = {
 
             <div>
               <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Starting KM (Odometer Reading) *</label>
-              <input type="number" step="0.1" id="trip-starting-km" required placeholder="e.g. 45250" class="w-full px-3 py-2 text-xs bg-white dark:bg-slate-700 rounded-xl text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 font-bold text-indigo-600" />
-              <p class="text-[10px] text-slate-400 mt-0.5">Vehicle kilometre reading at start of trip.</p>
+              <input type="number" step="0.1" id="trip-starting-km" value="${defaultStartKm}" required placeholder="e.g. 45250" class="w-full px-3 py-2 text-xs bg-white dark:bg-slate-700 rounded-xl text-slate-800 dark:text-white border border-slate-300 dark:border-slate-600 font-bold text-indigo-600" />
+              <p class="text-[10px] text-slate-400 mt-0.5">${defaultStartKm !== '' ? `Auto-filled from previous trip final KM (${defaultStartKm} KM). Editable if needed.` : 'Vehicle kilometre reading at start of trip.'}</p>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
