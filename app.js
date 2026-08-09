@@ -2334,6 +2334,8 @@ async function renderRecentActions() {
         <div>
           <select class="form-input form-select" id="actions-category-select" onchange="actionsCategoryFilter=this.value;actionsPage=1;_refreshActionsTable()">
             <option value="ALL" ${actionsCategoryFilter==='ALL'?'selected':''}>All Categories</option>
+            <option value="Expense" ${actionsCategoryFilter==='Expense'?'selected':''}>Expense</option>
+            <option value="Chemical" ${actionsCategoryFilter==='Chemical'?'selected':''}>Chemical</option>
             <option value="Customer" ${actionsCategoryFilter==='Customer'?'selected':''}>Customer</option>
             <option value="Order" ${actionsCategoryFilter==='Order'?'selected':''}>Order</option>
             <option value="Driver" ${actionsCategoryFilter==='Driver'?'selected':''}>Driver</option>
@@ -2347,6 +2349,12 @@ async function renderRecentActions() {
         <div>
           <select class="form-input form-select" id="actions-type-select" onchange="actionsTypeFilter=this.value;actionsPage=1;_refreshActionsTable()">
             <option value="ALL">All Action Types</option>
+            <option value="Add General Expense">Add General Expense</option>
+            <option value="Delete Expense">Delete Expense</option>
+            <option value="Chemical Stock IN">Chemical Stock IN</option>
+            <option value="Chemical Stock OUT">Chemical Stock OUT</option>
+            <option value="Add Chemical Master">Add Chemical Master</option>
+            <option value="Delete Chemical Master">Delete Chemical Master</option>
             <option value="Add Customer">Add Customer</option>
             <option value="Phone Number Change">Phone Number Change</option>
             <option value="Edit Customer">Edit Customer</option>

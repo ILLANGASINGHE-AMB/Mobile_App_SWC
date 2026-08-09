@@ -683,7 +683,10 @@ const ExpensesModule = {
 
   async deleteGeneralExpense(id) {
     if (!confirm('Are you sure you want to delete this expense record?')) return;
+    const expenses = await DB.getGeneralExpenses();
+    const exp = expenses.find(e => e.id === id || e.expense_id === id);
     await DB.deleteGeneralExpense(id);
+    await DB.logAction('Delete Expense', `Deleted expense "${exp ? exp.expense_name : id}" (LKR ${exp ? parseFloat(exp.amount||0).toLocaleString() : '0'})`, { id, expense: exp }, 'Expense');
     showToast('Expense record deleted.');
     await this.switchSubTab(this.activeSubTab);
   },
@@ -874,7 +877,10 @@ const ExpensesModule = {
 
   async deleteChemical(id) {
     if (!confirm('Are you sure you want to delete this chemical master record?')) return;
+    const chemicals = await DB.getChemicals();
+    const chem = chemicals.find(c => c.id === id || c.chemical_id === id);
     await DB.deleteChemical(id);
+    await DB.logAction('Delete Chemical Master', `Deleted chemical catalog entry "${chem ? chem.name : id}" (${chem ? chem.chemical_id : id})`, { id, chemical: chem }, 'Chemical');
     showToast('Chemical deleted.');
     await this.switchSubTab(this.activeSubTab);
   }
