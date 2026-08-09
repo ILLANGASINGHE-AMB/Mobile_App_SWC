@@ -155,6 +155,10 @@ async function applySettings() {
     const el = document.getElementById('sidebar-company-name');
     if (el) el.innerHTML = companyName.replace(' ', '<br/>');
   }
+
+  if (logoData && typeof updateLogo === 'function') {
+    updateLogo(logoData);
+  }
 }
 
 // ─────────────────────────────────────────────
