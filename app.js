@@ -59,6 +59,29 @@ function updateRoleChip() {
         </span>
       </div>
     </div>`;
+  applyRoleSidebarRestrictions();
+}
+
+function applyRoleSidebarRestrictions() {
+  if (!currentUser) return;
+  const isDriver = currentUser.role === 'driver';
+
+  document.querySelectorAll('nav.sidebar-nav a').forEach(a => {
+    const page = a.dataset.page;
+    if (isDriver) {
+      if (['transport', 'customers', 'settings'].includes(page)) {
+        a.style.display = 'flex';
+      } else {
+        a.style.display = 'none';
+      }
+    } else {
+      a.style.display = 'flex';
+    }
+  });
+
+  if (isDriver && !['transport', 'customers', 'settings'].includes(currentPage)) {
+    navigate('transport');
+  }
 }
 
 function doLogout() {
@@ -82,7 +105,11 @@ async function initApp() {
   await applySettings();
   updateTopbarDate();
   setInterval(updateTopbarDate, 60000);
-  navigate('dashboard');
+  if (currentUser && currentUser.role === 'driver') {
+    navigate('transport');
+  } else {
+    navigate('dashboard');
+  }
 }
 
 function updateTopbarDate() {
@@ -99,23 +126,34 @@ async function applySettings() {
   const showAiBtn   = await DB.getSetting('show_saga_ai_button');
   showUndoButtonSetting = showUndo !== 'false' ? 'true' : 'false';
 
+  // Toggle SAGA AI floating drawer button
+  const fab = document.getElementById('gemini-fab');
+  const drawer = document.getElementById('gemini-drawer');
+  if (showAiBtn === 'false') {
+    if (fab) fab.style.display = 'none';
+    if (drawer) drawer.style.display = 'none';
+  } else {
+    if (fab) fab.style.display = 'flex';
+  }
+
   if (darkMode === 'true') {
     document.documentElement.classList.add('dark');
     const icon = document.getElementById('dark-icon');
     if (icon) icon.className = 'fas fa-sun';
+  } else {
+    document.documentElement.classList.remove('dark');
+    const icon = document.getElementById('dark-icon');
+    if (icon) icon.className = 'fas fa-moon';
   }
+
   if (textSize) {
-    const map = { sm: 'text-sm-ui', md: 'text-md-ui', lg: 'text-lg-ui', xl: 'text-xl-ui' };
-    document.body.classList.add(map[textSize] || 'text-md-ui');
+    document.body.classList.remove('text-size-sm', 'text-size-md', 'text-size-lg');
+    document.body.classList.add(`text-size-${textSize}`);
   }
-  if (logoData) updateLogo(logoData);
+
   if (companyName) {
     const el = document.getElementById('sidebar-company-name');
     if (el) el.innerHTML = companyName.replace(' ', '<br/>');
-  }
-  const fab = document.getElementById('gemini-fab');
-  if (fab) {
-    fab.style.display = (showAiBtn === 'false') ? 'none' : 'flex';
   }
 }
 
@@ -123,6 +161,9 @@ async function applySettings() {
 // NAVIGATION
 // ─────────────────────────────────────────────
 function navigate(page) {
+  if (currentUser && currentUser.role === 'driver' && !['transport', 'customers', 'settings'].includes(page)) {
+    page = 'transport';
+  }
   currentPage = page;
   Object.values(dashCharts).forEach(c => { try { c.destroy(); } catch(e){} });
   dashCharts = {};
@@ -132,7 +173,7 @@ function navigate(page) {
   });
 
   const titles = {
-    dashboard: 'Dashboard', customers: 'Customers', drivers: 'Drivers',
+    dashboard: 'Dashboard', customers: 'Customers', drivers: 'Drivers', transport: 'Transport & Trip Management',
     orders: 'Orders', paynow: 'Pay Now', invoices: 'Invoices', payments: 'Payments',
     items: 'Items', expenses: 'Expenses & Chemical Register', reports: 'Reports', settings: 'Settings', deductions: 'Deductions',
     'recent-actions': 'Recent Actions'
@@ -143,6 +184,7 @@ function navigate(page) {
     dashboard: renderDashboard,
     customers: renderCustomers,
     drivers:   renderDrivers,
+    transport: renderTransportPage,
     orders:    renderOrders,
     paynow:    renderPayNow,
     invoices:  renderInvoices,
@@ -161,6 +203,12 @@ function renderExpensesPage() {
   const contentDiv = document.getElementById('content');
   contentDiv.innerHTML = `<div id="page-expenses" class="page-content"></div>`;
   ExpensesModule.init();
+}
+
+function renderTransportPage() {
+  const contentDiv = document.getElementById('content');
+  contentDiv.innerHTML = `<div id="page-transport" class="page-content"></div>`;
+  TransportModule.init();
 }
 
 function toggleDark() {
