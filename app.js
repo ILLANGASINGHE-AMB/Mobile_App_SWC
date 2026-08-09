@@ -134,7 +134,7 @@ function navigate(page) {
   const titles = {
     dashboard: 'Dashboard', customers: 'Customers', drivers: 'Drivers',
     orders: 'Orders', paynow: 'Pay Now', invoices: 'Invoices', payments: 'Payments',
-    items: 'Items', reports: 'Reports', settings: 'Settings', deductions: 'Deductions',
+    items: 'Items', expenses: 'Expenses & Chemical Register', reports: 'Reports', settings: 'Settings', deductions: 'Deductions',
     'recent-actions': 'Recent Actions'
   };
   document.getElementById('page-title').textContent = titles[page] || page;
@@ -148,12 +148,19 @@ function navigate(page) {
     invoices:  renderInvoices,
     payments:  renderInvoices,
     items:     renderItems,
+    expenses:  renderExpensesPage,
     reports:   () => { if (!requireAdmin()) { navigate('dashboard'); } else { renderReports(); } },
     settings:  renderSettings,
     deductions: renderDeductions,
     'recent-actions': renderRecentActions
   };
   if (pages[page]) pages[page]();
+}
+
+function renderExpensesPage() {
+  const contentDiv = document.getElementById('content');
+  contentDiv.innerHTML = `<div id="page-expenses" class="page-content"></div>`;
+  ExpensesModule.init();
 }
 
 function toggleDark() {

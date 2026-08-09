@@ -233,16 +233,19 @@ const DB = {
 
   // ── Export / Import ───────────────────────
   async exportAll() {
-    const [customers, drivers, orders, order_items, invoices, payments, settings, items, deductions, users] = await Promise.all([
+    const [customers, drivers, orders, order_items, invoices, payments, settings, items, deductions, users, chemicals, chemical_ledger, general_expenses] = await Promise.all([
       DB.getCustomers(), DB.getDrivers(), DB.getOrders(),
       _q(_sb.from('order_items').select('*')),
       DB.getInvoices(), DB.getPayments(),
       _q(_sb.from('settings').select('*')),
       DB.getItems(),
       _q(_sb.from('deductions').select('*')),
-      _q(_sb.from('users').select('*'))
+      _q(_sb.from('users').select('*')),
+      DB.getChemicals(),
+      DB.getChemicalLedger(),
+      DB.getGeneralExpenses()
     ]);
-    return { customers, drivers, orders, order_items, invoices, payments, settings, items, deductions, users, exported_at: new Date().toISOString() };
+    return { customers, drivers, orders, order_items, invoices, payments, settings, items, deductions, users, chemicals, chemical_ledger, general_expenses, exported_at: new Date().toISOString() };
   },
   async importAll(data) {
     // 1. Delete all existing data in proper dependency order to avoid FK violation errors
@@ -661,6 +664,209 @@ const DB = {
   },
   async clearActions() {
     await DB.setSetting('recent_system_actions', JSON.stringify([]));
+  },
+
+  // ── Chemicals & Expenses ──────────────────
+  async getChemicals() {
+    try {
+      const rows = await _q(_sb.from('chemicals').select('*').order('chemical_id'));
+      if (rows && rows.length > 0) return rows;
+    } catch(e) {
+      // Fallback to setting store
+    }
+    try {
+      const val = await DB.getSetting('chemical_master_list');
+      if (val) return JSON.parse(val);
+    } catch(e) {}
+
+    // Default pre-seeded chemicals from Expenses.md
+    const seed = [
+      { id: 1, chemical_id: 'CHM-0001', name: 'Supermat', unit: 'kg', package_size: '5 kg', status: 'Active', created_at: new Date().toISOString() },
+      { id: 2, chemical_id: 'CHM-0002', name: 'Oxalic Acid', unit: 'kg', package_size: '5 kg', status: 'Active', created_at: new Date().toISOString() },
+      { id: 3, chemical_id: 'CHM-0003', name: 'Organic Chlorine Bleach', unit: 'kg', package_size: '10 kg', status: 'Active', created_at: new Date().toISOString() },
+      { id: 4, chemical_id: 'CHM-0004', name: 'Emolshi Fire', unit: 'ml', package_size: '1000 ml', status: 'Active', created_at: new Date().toISOString() },
+      { id: 5, chemical_id: 'CHM-0005', name: 'Safna', unit: 'ml', package_size: '1000 ml', status: 'Active', created_at: new Date().toISOString() }
+    ];
+    await DB.setSetting('chemical_master_list', JSON.stringify(seed));
+    return seed;
+  },
+  async addChemical(data) {
+    let nextId = 'CHM-0001';
+    try {
+      const existing = await DB.getChemicals();
+      let maxSeq = 0;
+      existing.forEach(c => {
+        if (c.chemical_id && c.chemical_id.startsWith('CHM-')) {
+          const n = parseInt(c.chemical_id.replace('CHM-', ''), 10) || 0;
+          if (n > maxSeq) maxSeq = n;
+        }
+      });
+      nextId = `CHM-${String(maxSeq + 1).padStart(4, '0')}`;
+    } catch(e) {}
+
+    const record = {
+      chemical_id: data.chemical_id || nextId,
+      name: data.name,
+      unit: data.unit || 'kg',
+      package_size: data.package_size || '',
+      status: data.status || 'Active',
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      const rows = await _q(_sb.from('chemicals').insert(record).select());
+      if (rows && rows[0]) return rows[0];
+    } catch(e) {}
+
+    // Fallback store
+    const list = await DB.getChemicals();
+    record.id = Date.now();
+    list.push(record);
+    await DB.setSetting('chemical_master_list', JSON.stringify(list));
+    return record;
+  },
+  async updateChemical(id, data) {
+    try {
+      await _q(_sb.from('chemicals').update(data).eq('id', id));
+    } catch(e) {}
+    const list = await DB.getChemicals();
+    const idx = list.findIndex(c => c.id === id || c.chemical_id === id);
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...data };
+      await DB.setSetting('chemical_master_list', JSON.stringify(list));
+    }
+  },
+  async deleteChemical(id) {
+    try {
+      await _q(_sb.from('chemicals').delete().eq('id', id));
+    } catch(e) {}
+    const list = await DB.getChemicals();
+    const filtered = list.filter(c => c.id !== id && c.chemical_id !== id);
+    await DB.setSetting('chemical_master_list', JSON.stringify(filtered));
+  },
+
+  // ── Chemical Stock Ledger (IN / OUT / BAL) ─
+  async getChemicalLedger() {
+    try {
+      const rows = await _q(_sb.from('chemical_ledger').select('*').order('date', { ascending: true }));
+      if (rows) return rows;
+    } catch(e) {}
+    try {
+      const val = await DB.getSetting('chemical_ledger_records');
+      if (val) return JSON.parse(val);
+    } catch(e) {}
+    return [];
+  },
+  async addChemicalLedgerEntry(entry) {
+    const record = {
+      id: 'chm_log_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+      expense_id: entry.expense_id || null,
+      date: entry.date || new Date().toISOString().split('T')[0],
+      chemical_id: entry.chemical_id, // e.g. CHM-0001
+      chemical_name: entry.chemical_name,
+      type: entry.type, // 'IN' or 'OUT'
+      qty_in: parseFloat(entry.qty_in) || 0,
+      qty_out: parseFloat(entry.qty_out) || 0,
+      unit: entry.unit || 'kg',
+      unit_price: parseFloat(entry.unit_price) || 0,
+      total_amount: parseFloat(entry.total_amount) || 0,
+      notes: entry.notes || '',
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      await _q(_sb.from('chemical_ledger').insert(record));
+    } catch(e) {}
+
+    const logs = await DB.getChemicalLedger();
+    logs.push(record);
+    logs.sort((a,b) => new Date(a.date) - new Date(b.date));
+    await DB.setSetting('chemical_ledger_records', JSON.stringify(logs));
+    return record;
+  },
+  async deleteChemicalLedgerEntry(id) {
+    try {
+      await _q(_sb.from('chemical_ledger').delete().eq('id', id));
+    } catch(e) {}
+    const logs = await DB.getChemicalLedger();
+    const filtered = logs.filter(l => l.id !== id && l.expense_id !== id);
+    await DB.setSetting('chemical_ledger_records', JSON.stringify(filtered));
+  },
+
+  // ── General Expenses ──────────────────────
+  async getGeneralExpenses() {
+    try {
+      const rows = await _q(_sb.from('general_expenses').select('*').order('expense_date', { ascending: false }));
+      if (rows) return rows;
+    } catch(e) {}
+    try {
+      const val = await DB.getSetting('general_expenses_records');
+      if (val) return JSON.parse(val);
+    } catch(e) {}
+    return [];
+  },
+  async addGeneralExpense(data) {
+    const expenseId = await DB.generateExpenseId();
+    const record = {
+      id: 'gen_exp_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+      expense_id: expenseId,
+      expense_name: data.expense_name, // e.g. "Diesel for Delivery Truck", "Electricity Bill"
+      expense_date: data.expense_date || new Date().toISOString().split('T')[0],
+      amount: parseFloat(data.amount) || 0,
+      payment_method: data.payment_method || 'Cash',
+      months_covered: parseInt(data.months_covered, 10) || 1, // Multi-month averaging
+      monthly_averaged_amount: (parseFloat(data.amount) || 0) / (parseInt(data.months_covered, 10) || 1),
+      notes: data.notes || '',
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      await _q(_sb.from('general_expenses').insert(record));
+    } catch(e) {}
+
+    const expenses = await DB.getGeneralExpenses();
+    expenses.unshift(record);
+    await DB.setSetting('general_expenses_records', JSON.stringify(expenses));
+    return record;
+  },
+  async deleteGeneralExpense(id) {
+    try {
+      await _q(_sb.from('general_expenses').delete().eq('id', id));
+    } catch(e) {}
+    const expenses = await DB.getGeneralExpenses();
+    const filtered = expenses.filter(e => e.id !== id && e.expense_id !== id);
+    await DB.setSetting('general_expenses_records', JSON.stringify(filtered));
+  },
+
+  // ── Expense ID Generator — EXP-YYYY-XXXXX ─
+  async generateExpenseId() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const prefix = `EXP-${yyyy}-`;
+    
+    let maxSeq = 0;
+    try {
+      const [chemLogs, genExp] = await Promise.all([
+        DB.getChemicalLedger(),
+        DB.getGeneralExpenses()
+      ]);
+
+      chemLogs.forEach(c => {
+        if (c.expense_id && c.expense_id.startsWith(prefix)) {
+          const seq = parseInt(c.expense_id.replace(prefix, ''), 10) || 0;
+          if (seq > maxSeq) maxSeq = seq;
+        }
+      });
+      genExp.forEach(g => {
+        if (g.expense_id && g.expense_id.startsWith(prefix)) {
+          const seq = parseInt(g.expense_id.replace(prefix, ''), 10) || 0;
+          if (seq > maxSeq) maxSeq = seq;
+        }
+      });
+    } catch(e) {}
+
+    return `${prefix}${String(maxSeq + 1).padStart(5, '0')}`;
   }
 };
+
 
