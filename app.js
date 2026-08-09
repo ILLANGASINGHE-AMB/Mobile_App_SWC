@@ -2382,6 +2382,7 @@ async function renderRecentActions() {
         <div>
           <select class="form-input form-select" id="actions-category-select" onchange="actionsCategoryFilter=this.value;actionsPage=1;_refreshActionsTable()">
             <option value="ALL" ${actionsCategoryFilter==='ALL'?'selected':''}>All Categories</option>
+            <option value="Transport" ${actionsCategoryFilter==='Transport'?'selected':''}>Transport</option>
             <option value="Expense" ${actionsCategoryFilter==='Expense'?'selected':''}>Expense</option>
             <option value="Chemical" ${actionsCategoryFilter==='Chemical'?'selected':''}>Chemical</option>
             <option value="Customer" ${actionsCategoryFilter==='Customer'?'selected':''}>Customer</option>
@@ -2397,6 +2398,10 @@ async function renderRecentActions() {
         <div>
           <select class="form-input form-select" id="actions-type-select" onchange="actionsTypeFilter=this.value;actionsPage=1;_refreshActionsTable()">
             <option value="ALL">All Action Types</option>
+            <option value="Start Trip">Start Trip</option>
+            <option value="Set Trip Customers">Set Trip Customers</option>
+            <option value="End Trip">End Trip</option>
+            <option value="Delete Trip">Delete Trip</option>
             <option value="Add General Expense">Add General Expense</option>
             <option value="Delete Expense">Delete Expense</option>
             <option value="Chemical Stock IN">Chemical Stock IN</option>

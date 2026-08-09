@@ -301,7 +301,7 @@ const TransportModule = {
       status: 'In Progress'
     });
 
-    await DB.logAction('Start Trip', `Started trip ${record.trip_id} (Start KM: ${startingKm})`, record, 'Driver');
+    await DB.logAction('Start Trip', `Started trip ${record.trip_id} (Start KM: ${startingKm})`, record, 'Transport');
 
     document.getElementById('start-trip-modal').remove();
     showToast(`Trip ${record.trip_id} started!`);
@@ -460,7 +460,7 @@ const TransportModule = {
     });
 
     const trip = await DB.getTrip(tripDbId);
-    await DB.logAction('Set Trip Customers', `Updated customer sequence for ${trip ? trip.trip_id : tripDbId}`, { selected_customers: this.selectedCustomerSeq }, 'Driver');
+    await DB.logAction('Set Trip Customers', `Updated customer sequence for ${trip ? trip.trip_id : tripDbId}`, { selected_customers: this.selectedCustomerSeq }, 'Transport');
 
     const modal = document.getElementById('cust-select-modal');
     if (modal) modal.remove();
@@ -579,7 +579,7 @@ const TransportModule = {
       status: 'Completed'
     });
 
-    await DB.logAction('End Trip', `Completed trip ${trip.trip_id} (Distance: ${distanceKm} KM)`, { trip_id: trip.trip_id, distance_km: distanceKm }, 'Driver');
+    await DB.logAction('End Trip', `Completed trip ${trip.trip_id} (Distance: ${distanceKm} KM)`, { trip_id: trip.trip_id, distance_km: distanceKm }, 'Transport');
 
     document.getElementById('end-trip-modal').remove();
     showToast(`Trip ${trip.trip_id} completed! Distance: ${distanceKm} KM`);
@@ -667,7 +667,7 @@ const TransportModule = {
     if (!confirm('Are you sure you want to delete this trip record?')) return;
     const trip = await DB.getTrip(tripDbId);
     await DB.deleteTrip(tripDbId);
-    await DB.logAction('Delete Trip', `Deleted trip record ${trip ? trip.trip_id : tripDbId}`, { id: tripDbId }, 'Driver');
+    await DB.logAction('Delete Trip', `Deleted trip record ${trip ? trip.trip_id : tripDbId}`, { id: tripDbId }, 'Transport');
     showToast('Trip record deleted.');
     await this.renderTripsList();
   }
