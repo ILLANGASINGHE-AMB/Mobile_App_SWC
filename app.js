@@ -443,9 +443,11 @@ async function renderCustomers() {
     <div class="section-header">
       <span class="section-title">Hotel Customers</span>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" onclick="exportCustomers()" title="Export customers to JSON"><i class="fas fa-download"></i> Backup</button>
-        <button class="btn btn-secondary" onclick="document.getElementById('cust-import-file').click()" title="Import customers from JSON"><i class="fas fa-upload"></i> Import</button>
-        <input type="file" id="cust-import-file" accept=".json" style="display:none" onchange="importCustomers(this)"/>
+        ${canBackupRestore() ? `
+          <button class="btn btn-secondary" onclick="exportCustomers()" title="Export customers to JSON"><i class="fas fa-download"></i> Backup</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('cust-import-file').click()" title="Import customers from JSON"><i class="fas fa-upload"></i> Import</button>
+          <input type="file" id="cust-import-file" accept=".json" style="display:none" onchange="importCustomers(this)"/>
+        ` : ''}
         <button class="btn btn-primary" onclick="showAddCustomerModal()"><i class="fas fa-plus"></i> Add Customer</button>
       </div>
     </div>
@@ -495,7 +497,7 @@ async function _refreshCustomersTable() {
           <button class="btn btn-primary btn-sm" onclick="showEditCustomerModal(${c.id})"><i class="fas fa-edit"></i></button>
           <button class="btn btn-secondary btn-sm" onclick="viewCustomerOrders(${c.id})"><i class="fas fa-boxes-stacked"></i></button>
           ${isAdmin() ? `<button class="btn btn-success btn-sm" onclick="printCustomerSalesSummary(${c.id})" style="background:#10b981; border-color:#10b981; font-weight:600;"><i class="fas fa-file-pdf"></i> SUMMARY</button>` : ''}
-          <button class="btn btn-danger btn-sm" onclick="deleteCustomerConfirm(${c.id})"><i class="fas fa-trash"></i></button>
+          ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomerConfirm(${c.id})"><i class="fas fa-trash"></i></button>` : ''}
         </div></td>
       </tr>`).join('');
   const pg=document.getElementById('cust-pagination');
@@ -606,6 +608,7 @@ async function saveEditCustomer(id) {
   hideModal('edit-cust-modal'); toast('Customer updated!'); renderCustomers();
 }
 async function deleteCustomerConfirm(id) {
+  if (!canDelete()) return toast('Admin permission required to delete customers', 'error');
   const cust = await DB.getCustomer(id);
   const custName = cust ? cust.hotel_name : 'Customer #' + id;
   const custPhone = cust ? cust.phone : '';
