@@ -27,15 +27,15 @@ const ExpensesModule = {
           </div>
           
           <!-- Quick Action Buttons -->
-          <div class="flex flex-wrap items-center gap-2">
-            <button onclick="ExpensesModule.openAddGeneralExpenseModal()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-xs sm:text-sm transition-all shadow-sm flex items-center gap-2">
-              <i class="fa-solid fa-plus"></i> Add General Expense
+          <div class="flex items-center gap-2 overflow-x-auto shrink-0">
+            <button onclick="ExpensesModule.openAddGeneralExpenseModal()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs transition-all shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+              <i class="fa-solid fa-plus text-xs"></i> General Expense
             </button>
-            <button onclick="ExpensesModule.openAddChemLogModal('IN')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-xs sm:text-sm transition-all shadow-sm flex items-center gap-2">
-              <i class="fa-solid fa-cart-plus"></i> Purchase Chemical (IN)
+            <button onclick="ExpensesModule.openAddChemLogModal('IN')" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-xs transition-all shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+              <i class="fa-solid fa-cart-plus text-xs"></i> Purchase Stock (IN)
             </button>
-            <button onclick="ExpensesModule.openAddChemLogModal('OUT')" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-medium text-xs sm:text-sm transition-all shadow-sm flex items-center gap-2">
-              <i class="fa-solid fa-flask-vial"></i> Log Usage (OUT)
+            <button onclick="ExpensesModule.openAddChemLogModal('OUT')" class="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-semibold text-xs transition-all shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+              <i class="fa-solid fa-flask-vial text-xs"></i> Log Usage (OUT)
             </button>
           </div>
         </div>
