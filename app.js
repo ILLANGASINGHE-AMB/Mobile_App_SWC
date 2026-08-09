@@ -2235,7 +2235,7 @@ async function showCustomerProfileModal(id) {
 
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
       <button class="btn btn-secondary" onclick="hideModal('customer-profile-modal')">Close</button>
-      <button class="btn btn-primary" onclick="saveCustomerProfilePrices(${c.id})"><i class="fas fa-save"></i> Save Custom Prices</button>
+      ${!isDriver() ? `<button class="btn btn-primary" onclick="saveCustomerProfilePrices(${c.id})"><i class="fas fa-save"></i> Save Custom Prices</button>` : ''}
     </div>`, 'modal-lg');
   
   showModal('customer-profile-modal');

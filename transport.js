@@ -244,6 +244,7 @@ const TransportModule = {
   // STEP 4-8: START NEW TRIP MODAL
   // ──────────────────────────────────────────
   async openStartTripModal() {
+    if (!canEditTransport()) return showToast('Driver or Admin permission required to start trips');
     const todayDate = new Date().toISOString().split('T')[0];
     const defaultTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const tripId = await DB.generateTripId();
@@ -343,6 +344,7 @@ const TransportModule = {
   // STEP 9-12: SELECT CUSTOMERS & ORDER PRESERVATION MODAL
   // ──────────────────────────────────────────
   async openCustomerSelectionModal(tripDbId) {
+    if (!canEditTransport()) return showToast('Driver or Admin permission required to edit trip customers');
     const [trip, customers] = await Promise.all([
       DB.getTrip(tripDbId),
       DB.getCustomers()
@@ -527,6 +529,7 @@ const TransportModule = {
   // STEP 14-19: END / COMPLETE TRIP MODAL (Includes Customer Selection Option)
   // ──────────────────────────────────────────
   async openEndTripModal(tripDbId) {
+    if (!canEditTransport()) return showToast('Driver or Admin permission required to end trips');
     const [trip, customers] = await Promise.all([
       DB.getTrip(tripDbId),
       DB.getCustomers()
@@ -759,6 +762,7 @@ const TransportModule = {
   },
 
   async deleteTrip(tripDbId) {
+    if (!canDelete()) return showToast('Admin permission required to delete trips');
     if (!confirm('Are you sure you want to delete this trip record?')) return;
     const trip = await DB.getTrip(tripDbId);
     await DB.deleteTrip(tripDbId);

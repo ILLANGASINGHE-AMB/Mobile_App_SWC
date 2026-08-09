@@ -512,6 +512,7 @@ async function saveCreditBill() {
 // ADD ORDER MODAL
 // ─────────────────────────────────────────────
 async function showAddOrderModal() {
+  if (!canAddOrders()) return toast('Staff or Admin permission required to add orders', 'error');
   const [customers,drivers]=await Promise.all([DB.getCustomers(),DB.getDrivers()]);
   window._aoCustomersList = customers;
   window._aoMinDiscount = parseFloat(await DB.getSetting('min_discount_amount')||'0') || 0;
@@ -939,6 +940,7 @@ async function saveNewOrder(){
 // ─────────────────────────────────────────────
 let _editOrderCatalog=[];
 async function showEditOrderModal(id){
+  if (!canEditOrders()) return toast('Staff or Admin permission required to edit orders', 'error');
   const [order,customers,drivers,existingItems,allCatalog,invoice]=await Promise.all([
     DB.getOrder(id),
     DB.getCustomers(),
