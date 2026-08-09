@@ -142,7 +142,6 @@ async function _refreshOrdersTable() {
               <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails(${o.id})"><i class="fas fa-eye"></i> View</button>
               ${canEditOrders() ? `<button class="btn btn-primary btn-sm" onclick="showEditOrderModal(${o.id})"><i class="fas fa-edit"></i> Edit</button>` : ''}
               <button class="btn btn-success btn-sm"   onclick="printInvoiceByOrder(${o.id})" style="background:#10b981;border-color:#10b981;color:#fff;"><i class="fas fa-print"></i> Print</button>
-              <button class="btn btn-sm" onclick="showOrderQR(${o.id})" title="Show QR Code for delivery confirmation" style="background:#7c3aed;border-color:#6d28d9;color:#fff;"><i class="fas fa-qrcode"></i> QR</button>
               ${isAdmin() ? `<button class="btn btn-danger btn-sm" onclick="deleteOrderConfirm(${o.id})"><i class="fas fa-trash"></i> Delete</button>` : ''}
             </div>
           </td>
@@ -910,10 +909,6 @@ async function saveNewOrder(){
       });
     }
 
-    // Generate and store a unique QR token for this order
-    const qrToken = Math.random().toString(36).substr(2,9) + Math.random().toString(36).substr(2,9);
-    await DB.updateOrder(orderId, { qr_token: qrToken });
-
     const cust = await DB.getCustomer(custId);
     const custName = cust ? cust.hotel_name : 'Customer #' + custId;
     await DB.logAction(
@@ -927,8 +922,6 @@ async function saveNewOrder(){
     hideModal('add-order-modal');
     toast(`Order ${batchId} created!`);
     renderOrders();
-    // Auto-show QR modal so driver can grab it immediately
-    setTimeout(() => showOrderQRByToken(orderId, qrToken, batchId), 400);
   } catch(err) {
     console.error('saveNewOrder error:', err);
     toast('Failed to save order: ' + (err.message||err), 'error');
@@ -1364,124 +1357,4 @@ async function printInvoiceByOrder(orderId) {
     };
   }
   printInvoice(inv);
-}
-
-// ─────────────────────────────────────────────
-// QR CODE — DELIVERY CONFIRMATION
-// ─────────────────────────────────────────────
-
-// Called from the table QR button — fetches order then shows modal
-async function showOrderQR(orderId) {
-  const order = await DB.getOrder(orderId);
-  if (!order) return toast('Order not found', 'error');
-  if (!order.qr_token) {
-    // Backfill token for older orders that didn't have one
-    const token = Math.random().toString(36).substr(2,9) + Math.random().toString(36).substr(2,9);
-    await DB.updateOrder(orderId, { qr_token: token });
-    order.qr_token = token;
-    order.batch_id = order.batch_id || String(orderId);
-  }
-  const cust = order.customer_id ? await DB.getCustomer(order.customer_id) : null;
-  const custName = cust?.hotel_name || getOrderCustomerName(order) || 'Unknown Customer';
-  showOrderQRByToken(orderId, order.qr_token, order.batch_id, custName, order.total_amount, order.status);
-}
-
-// Core function that builds and shows the QR modal given the token
-function showOrderQRByToken(orderId, token, batchId, custName='', totalAmount=0, orderStatus='Unpaid') {
-  // Build absolute URL to confirm.html in the same directory
-  const baseUrl = window.location.href.replace(/\/[^/]*$/, '');
-  const confirmUrl = `${baseUrl}/confirm.html?token=${token}`;
-
-  const qrImgUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data=${encodeURIComponent(confirmUrl)}`;
-  const isPaid    = orderStatus === 'Paid';
-
-  let m = document.getElementById('order-qr-modal'); if (m) m.remove();
-  const overlay = document.createElement('div');
-  overlay.id = 'order-qr-modal';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);';
-  overlay.innerHTML = `
-    <div style="background:var(--card-bg);border-radius:20px;padding:32px 28px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,0.28);text-align:center;position:relative;">
-      <button onclick="document.getElementById('order-qr-modal').remove()" style="position:absolute;top:14px;right:16px;background:none;border:none;cursor:pointer;font-size:1.3em;color:var(--text-muted);"><i class="fas fa-times"></i></button>
-
-      <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;">
-        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#2563eb);display:flex;align-items:center;justify-content:center;">
-          <i class="fas fa-qrcode" style="color:#fff;font-size:1.2em;"></i>
-        </div>
-        <div style="text-align:left;">
-          <div style="font-family:'Playfair Display',serif;font-size:1.1em;font-weight:700;color:var(--text);">Delivery QR Code</div>
-          <div style="font-size:0.78em;color:var(--text-muted);">Client scans to confirm receipt</div>
-        </div>
-      </div>
-
-      <!-- Batch + Customer info -->
-      <div style="display:flex;justify-content:center;gap:18px;margin:14px 0 16px;">
-        <div style="text-align:center;">
-          <div style="font-size:0.72em;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Batch ID</div>
-          <div style="font-family:monospace;font-weight:700;font-size:0.95em;color:var(--text);">${batchId||'—'}</div>
-        </div>
-        ${custName ? `<div style="text-align:center;">
-          <div style="font-size:0.72em;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Customer</div>
-          <div style="font-weight:600;font-size:0.92em;color:var(--text);">${custName}</div>
-        </div>` : ''}
-        ${totalAmount ? `<div style="text-align:center;">
-          <div style="font-size:0.72em;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Total</div>
-          <div style="font-weight:700;font-size:0.92em;color:#7c3aed;">${formatCurrency(totalAmount)}</div>
-        </div>` : ''}
-      </div>
-
-      ${isPaid
-        ? `<div style="padding:22px;background:#dcfce7;border-radius:14px;margin-bottom:18px;">
-             <i class="fas fa-check-circle" style="font-size:2.5em;color:#16a34a;margin-bottom:8px;display:block;"></i>
-             <div style="font-weight:700;color:#15803d;font-size:1em;">Already Paid</div>
-             <div style="font-size:0.82em;color:#16a34a;margin-top:4px;">This order has been confirmed as received.</div>
-           </div>`
-        : `<!-- QR Code Image -->
-           <div style="background:white;border-radius:16px;padding:14px;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,0.1);margin-bottom:16px;">
-             <img src="${qrImgUrl}" alt="QR Code" width="220" height="220" style="display:block;border-radius:8px;"
-               onerror="this.parentElement.innerHTML='<div style=\'padding:20px;color:#ef4444;font-size:0.85em;\'><i class=\'fas fa-wifi-slash\'></i><br>QR unavailable offline.<br>Use the link below.</div>'" />
-           </div>
-           <div style="font-size:0.76em;color:var(--text-muted);margin-bottom:14px;">Have the client scan this QR with their phone camera</div>`
-      }
-
-      <!-- URL row -->
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:8px;margin-bottom:18px;text-align:left;">
-        <i class="fas fa-link" style="color:#7c3aed;flex-shrink:0;"></i>
-        <span style="font-size:0.74em;color:var(--text-muted);word-break:break-all;flex:1;" id="qr-confirm-url">${confirmUrl}</span>
-        <button onclick="navigator.clipboard.writeText('${confirmUrl}').then(()=>toast('Link copied!'))" style="background:none;border:none;cursor:pointer;color:#7c3aed;flex-shrink:0;" title="Copy link">
-          <i class="fas fa-copy"></i>
-        </button>
-      </div>
-
-      <!-- Actions -->
-      <div style="display:flex;gap:10px;justify-content:center;">
-        <button onclick="document.getElementById('order-qr-modal').remove()" class="btn btn-secondary">Close</button>
-        <button onclick="window.open('${confirmUrl}','_blank')" class="btn" style="background:#7c3aed;color:#fff;border-color:#6d28d9;">
-          <i class="fas fa-external-link-alt"></i> Open Page
-        </button>
-        <button onclick="_printQrCode('${qrImgUrl}','${batchId}','${custName}')" class="btn btn-secondary">
-          <i class="fas fa-print"></i> Print QR
-        </button>
-      </div>
-    </div>`;
-
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
-}
-
-function _printQrCode(qrImgUrl, batchId, custName) {
-  const w = window.open('', '_blank', 'width=400,height=500');
-  w.document.write(`<!DOCTYPE html><html><head><title>QR - ${batchId}</title>
-  <style>body{font-family:sans-serif;text-align:center;padding:30px;} img{margin:20px auto;display:block;} h2{margin:0 0 4px;} p{color:#666;font-size:14px;margin:0;} .batch{font-family:monospace;font-size:18px;font-weight:bold;margin:12px 0 4px;} @media print{button{display:none;}}</style></head>
-  <body>
-    <h2>Sagacious Washing Center</h2>
-    <p>Delivery Confirmation QR Code</p>
-    <div class="batch">${batchId}</div>
-    <p>${custName}</p>
-    <img src="${qrImgUrl}" width="220" height="220"/>
-    <p style="margin-top:16px;font-size:12px;color:#999;">Scan with your phone to confirm receipt</p>
-    <button onclick="window.print()" style="margin-top:20px;padding:10px 24px;background:#7c3aed;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:15px;">Print</button>
-  </body></html>`);
-  w.document.close();
-  setTimeout(() => w.print(), 400);
 }
