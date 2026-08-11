@@ -1,0 +1,14 @@
+# Secret / environment files
+.env
+.env.local
+.env.*.local
+*.pem
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
