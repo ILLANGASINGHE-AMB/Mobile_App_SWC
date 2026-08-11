@@ -1,5 +1,10 @@
-In Customers Tba,
-Remove the search bar and make it like in the dashboard search icon and function method,
+In Orders Tab,
+The buttons show when touch on Filter button are messy,
 
-The backup, import and add customer buttons are very big for mobile view, change them to the mobile size.
+they should be optimzed for mobile view
 
+status        Customer
+----------   ----------
+----------   ----------
+
+remove driver from filter option

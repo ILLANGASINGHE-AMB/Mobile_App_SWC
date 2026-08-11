@@ -34,17 +34,13 @@ async function renderOrders() {
         ${canAddOrders() ? `<button class="btn btn-primary btn-sm" onclick="showAddOrderModal()"><i class="fas fa-plus"></i> New Order</button>` : ''}
       </div>
     </div>
-      <div id="orders-filter-panel" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-        <div><label class="form-label">Status</label>
-          <select class="form-input form-select" id="orders-status-sel" onchange="ordersStatusFilter=this.value;ordersPage=1;_refreshOrdersTable()">
+      <div id="orders-filter-panel" style="display:none;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;margin-bottom:14px;padding-top:12px;border-top:1px solid var(--border);">
+        <div style="min-width:0;"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">STATUS</label>
+          <select class="form-input form-select" id="orders-status-sel" onchange="ordersStatusFilter=this.value;ordersPage=1;_refreshOrdersTable()" style="font-size:0.85em;padding:9px 12px;border-radius:12px;width:100%;">
             <option value="">All Statuses</option>${statusOpts}
           </select></div>
-        <div><label class="form-label">Driver</label>
-          <select class="form-input form-select" id="orders-driver-sel" onchange="ordersDriverFilter=this.value;ordersPage=1;_refreshOrdersTable()">
-            <option value="">All Drivers</option>${driverOpts}
-          </select></div>
-        <div><label class="form-label">Customer</label>
-          <select class="form-input form-select" id="orders-cust-sel" onchange="ordersCustFilter=this.value;ordersPage=1;_refreshOrdersTable()">
+        <div style="min-width:0;"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">CUSTOMER</label>
+          <select class="form-input form-select" id="orders-cust-sel" onchange="ordersCustFilter=this.value;ordersPage=1;_refreshOrdersTable()" style="font-size:0.85em;padding:9px 12px;border-radius:12px;width:100%;">
             <option value="">All Customers</option>${custOpts}
           </select></div>
       </div>
