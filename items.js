@@ -27,8 +27,6 @@ async function renderItems() {
         </button>
         ${canUseQuotation()?'<button class="btn btn-primary btn-sm" onclick="showGenerateQuotationModal()" style="padding:6px 12px;font-size:0.82em;font-weight:700;"><i class="fas fa-file-invoice"></i> Quotation</button>':''}
         ${canUseQuotation()?'<button class="btn btn-secondary btn-sm" onclick="showDefaultTermsModal()" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-file-contract"></i> Terms</button>':''}
-        ${isAdmin()?'<button class="btn btn-secondary btn-sm" onclick="exportItems()" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-download"></i> Backup</button>':''}
-        ${isAdmin()?'<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'items-import-file\').click()" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-upload"></i> Import</button>':''}
         <input type="file" id="items-import-file" accept=".json" style="display:none" onchange="importItems(this)"/>
         ${canEditItems()?'<button class="btn btn-primary btn-sm" onclick="showAddItemModal()" style="padding:6px 12px;font-size:0.82em;font-weight:700;"><i class="fas fa-plus"></i> Add Item</button>':''}
       </div>
