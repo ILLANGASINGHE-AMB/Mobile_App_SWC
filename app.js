@@ -1939,80 +1939,82 @@ async function showBatchPayConfirmModal() {
   currentBatchPayOption = 'standard';
 
   createModal('batch-pay-confirm-modal', 'Batch Payment Summary', `
-    <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <button class="btn btn-sm" id="batch-opt-standard" onclick="selectBatchPayOption('standard')" style="background:var(--success);color:#fff;border-color:var(--success);font-weight:600;"><i class="fas fa-wallet"></i> Standard Batch Payment</button>
-      <button class="btn btn-sm" id="batch-opt-deduct" onclick="selectBatchPayOption('deduct')" style="background:var(--secondary);color:var(--text);border-color:var(--border);font-weight:600;"><i class="fas fa-cut"></i> Batch Pay with Deductions</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;width:100%;">
+      <button class="btn btn-sm" id="batch-opt-standard" onclick="selectBatchPayOption('standard')" style="flex:1;min-width:140px;background:var(--success);color:#fff;border-color:var(--success);font-weight:700;padding:8px 10px;font-size:0.82em;border-radius:10px;">
+        <i class="fas fa-wallet"></i> Standard Batch Payment
+      </button>
+      <button class="btn btn-sm" id="batch-opt-deduct" onclick="selectBatchPayOption('deduct')" style="flex:1;min-width:140px;background:var(--secondary);color:var(--text);border-color:var(--border);font-weight:700;padding:8px 10px;font-size:0.82em;border-radius:10px;">
+        <i class="fas fa-cut"></i> Batch Pay with Deductions
+      </button>
     </div>
 
-    <p style="font-size:0.88em; color:var(--text-muted); margin-bottom:14px;">Please review the summary of selected orders before confirming payment.</p>
+    <p style="font-size:0.82em; color:var(--text-muted); margin-bottom:10px;">Please review the summary of selected orders before confirming payment.</p>
     
-    <div style="background:var(--bg); padding:16px; border-radius:10px; margin-bottom:18px;">
-      <div style="font-size:0.9em; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted);">
+    <div style="background:var(--bg); padding:12px; border-radius:12px; margin-bottom:14px; max-height:180px; overflow-y:auto;">
+      <div style="font-size:0.8em; font-weight:700; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted);">
         No of Orders Selected: ${selectedBatchDetails.length}
       </div>
-      <table style="width:100%; border-collapse:collapse; font-size:0.9em;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.84em;">
         <thead>
           <tr style="border-bottom:1.5px solid var(--border); text-transform:uppercase; font-size:0.75em; color:var(--text-muted); font-weight:700;">
-            <th style="padding:6px 0; text-align:left;">Customer Name</th>
-            <th style="padding:6px 0; text-align:left;">Order #</th>
-            <th style="padding:6px 0; text-align:left;">Invoice #</th>
-            <th style="padding:6px 0; text-align:right;">Amount (LKR)</th>
+            <th style="padding:4px 0; text-align:left;">Customer</th>
+            <th style="padding:4px 0; text-align:left;">Order #</th>
+            <th style="padding:4px 0; text-align:left;">Invoice #</th>
+            <th style="padding:4px 0; text-align:right;">Amount</th>
           </tr>
         </thead>
         <tbody>
           ${batchListHTML}
         </tbody>
       </table>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:14px; border-top:2px solid var(--border); font-weight:700; font-size:1.05em;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:2px solid var(--border); font-weight:700; font-size:0.95em;">
         <span>Total Amount</span>
         <span style="color:var(--success);">${formatCurrency(totalBatchAmount)}</span>
       </div>
     </div>
 
     <!-- Batch Deductions Form -->
-    <div id="batch-deduct-section" style="display:none; border-top: 1.5px dashed var(--border); padding-top: 14px; margin-top: 14px; margin-bottom: 18px;">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-        <div class="form-group" style="margin:0;"><label class="form-label" style="color:var(--danger); font-weight:700;"><i class="fas fa-scissors"></i> Batch Deduction Amount (LKR) *</label>
-          <input type="number" class="form-input" id="batch-deduct-amount" placeholder="e.g. 3000" min="0" max="${totalBatchAmount}" step="0.01" oninput="recalcBatchDeduction(${totalBatchAmount})"/></div>
-        <div class="form-group" style="margin:0;"><label class="form-label">Reason for Deduction</label>
-          <input class="form-input" id="batch-deduct-reason" placeholder="e.g. Volume discount / refund"/></div>
+    <div id="batch-deduct-section" style="display:none; border-top: 1.5px dashed var(--border); padding-top: 12px; margin-top: 12px; margin-bottom: 14px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="color:var(--danger); font-weight:700; font-size:0.78em;"><i class="fas fa-scissors"></i> DEDUCTION (LKR) *</label>
+          <input type="number" class="form-input" id="batch-deduct-amount" placeholder="e.g. 3000" min="0" max="${totalBatchAmount}" step="0.01" oninput="recalcBatchDeduction(${totalBatchAmount})" style="font-size:0.85em; padding:8px 10px; border-radius:10px;"/>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="font-size:0.78em; font-weight:700;">REASON FOR DEDUCTION</label>
+          <input class="form-input" id="batch-deduct-reason" placeholder="e.g. Volume discount" style="font-size:0.85em; padding:8px 10px; border-radius:10px;"/>
+        </div>
       </div>
       
-      <div style="background:#fef2f2; border:1px solid #fca5a5; padding:12px 16px; border-radius:8px; font-size:0.9em; display:flex; flex-direction:column; gap:4px; font-weight:600;">
+      <div style="background:#fef2f2; border:1px solid #fca5a5; padding:10px 12px; border-radius:10px; font-size:0.84em; display:flex; flex-direction:column; gap:4px; font-weight:600;">
         <div style="display:flex; justify-content:space-between;"><span>Batch Combined Total:</span> <span>${formatCurrency(totalBatchAmount)}</span></div>
         <div style="display:flex; justify-content:space-between; color:#ef4444;"><span>Minus Deduction:</span> <span id="lbl-batch-calc-deduct">- LKR 0.00</span></div>
-        <div style="display:flex; justify-content:space-between; border-top:1px solid #fca5a5; padding-top:6px; font-weight:700; font-size:1.05em; color:#1e40af;">
+        <div style="display:flex; justify-content:space-between; border-top:1px solid #fca5a5; padding-top:4px; font-weight:700; font-size:0.95em; color:#1e40af;">
           <span>Final Payment Amount:</span> <span id="lbl-batch-calc-final">${formatCurrency(totalBatchAmount)}</span>
         </div>
       </div>
     </div>
 
     <!-- Batch Payment Details Form -->
-    <div style="border-top: 1.5px dashed var(--border); padding-top: 14px; margin-top: 14px; margin-bottom: 18px;">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-        <div class="form-group" style="margin:0;">
-          <label class="form-label" style="font-weight:700;">Batch Payment Method *</label>
-          <select class="form-input form-select" id="pn-batch-method" onchange="onPayNowMethodChange(this, 'pn-batch-cheque-wrap')">
-            <option value="Cash">Cash</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-            <option value="Cheque">Cheque</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin:0;">
-          <label class="form-label">Batch Payment Notes / Description (Optional)</label>
-          <input class="form-input" id="pn-batch-notes" placeholder="e.g. Bulk settlement reference"/>
-        </div>
+    <div style="border-top: 1.5px dashed var(--border); padding-top: 12px; margin-top: 12px; margin-bottom: 14px;">
+      <div class="form-group" style="margin:0; width:100%;">
+        <label class="form-label" style="font-weight:700; font-size:0.78em;">BATCH PAYMENT METHOD *</label>
+        <select class="form-input form-select" id="pn-batch-method" onchange="onPayNowMethodChange(this, 'pn-batch-cheque-wrap')" style="font-size:0.85em; padding:9px 12px; border-radius:10px; width:100%;">
+          <option value="Cash">Cash</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Cheque">Cheque</option>
+        </select>
       </div>
       
-      <div id="pn-batch-cheque-wrap" style="display:none;" class="form-group">
-        <label class="form-label" style="font-weight:700; color:var(--success);">Batch Cheque Number *</label>
-        <input class="form-input" id="pn-batch-cheque-num" placeholder="Enter cheque number..."/>
+      <div id="pn-batch-cheque-wrap" style="display:none; margin-top:10px;" class="form-group">
+        <label class="form-label" style="font-weight:700; color:var(--success); font-size:0.78em;">BATCH CHEQUE NUMBER *</label>
+        <input class="form-input" id="pn-batch-cheque-num" placeholder="Enter cheque number..." style="font-size:0.85em; padding:9px 12px; border-radius:10px;"/>
       </div>
     </div>
     
-    <div style="display:flex; gap:10px; justify-content:flex-end;">
-      <button class="btn btn-secondary" onclick="hideModal('batch-pay-confirm-modal')">Cancel</button>
-      <button class="btn btn-success" style="background:#22c55e; border-color:#16a34a; font-weight:700;" onclick="confirmBatchPayment()">
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px; padding-top:10px; border-top:1px solid var(--border);">
+      <button class="btn btn-secondary btn-sm" onclick="hideModal('batch-pay-confirm-modal')">Cancel</button>
+      <button class="btn btn-success btn-sm" style="background:#22c55e; border-color:#16a34a; font-weight:700; padding:8px 14px; font-size:0.85em;" onclick="confirmBatchPayment()">
         <i class="fas fa-check-double"></i> Confirm & Download Receipt
       </button>
     </div>
@@ -2021,12 +2023,15 @@ async function showBatchPayConfirmModal() {
 }
 
 function confirmBatchPayment() {
-  const method = document.getElementById('pn-batch-method').value;
-  const notesInput = document.getElementById('pn-batch-notes').value.trim();
+  const methodEl = document.getElementById('pn-batch-method');
+  const method = methodEl ? methodEl.value : 'Cash';
+  const notesEl = document.getElementById('pn-batch-notes');
+  const notesInput = notesEl ? notesEl.value.trim() : '';
   let notes = notesInput || 'Paid fully via Batch Payment';
 
   if (method === 'Cheque') {
-    const chqNum = document.getElementById('pn-batch-cheque-num').value.trim();
+    const chqNumEl = document.getElementById('pn-batch-cheque-num');
+    const chqNum = chqNumEl ? chqNumEl.value.trim() : '';
     if (!chqNum) return toast('Please enter a cheque number', 'error');
     notes = `Cheque No: ${chqNum}. ${notesInput ? 'Notes: ' + notesInput : ''}`;
   }

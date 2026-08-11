@@ -1,9 +1,13 @@
 In the Pay Now Tab,
 
-reduce text size
+When in Batch Pay Mode --> Standard Batch Payment
 
-change the search bar to icon as in dashboard with function
+the Dialogbox,
+Remove the Batch Payments Notes BoX only from UI,
+make the other buttons and textboxes optimzed for mobile screen
 
-add select button per order to perform bacth pay option
+in Batch Pay with Deductions dialogbox
+Remove the Batch Payments Notes BoX only from UI,
+make the other buttons and textboxes optimzed for mobile screen
 
-add make all buton sizes optimized for mobile view
+s
