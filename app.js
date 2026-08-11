@@ -2543,39 +2543,38 @@ async function renderRecentActions() {
   }
 
   document.getElementById('content').innerHTML = `
-    <div class="section-header" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div class="section-header" style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <div>
-        <span class="section-title"><i class="fas fa-history" style="color:var(--primary);margin-right:8px;"></i>Recent System Actions</span>
-        <div style="font-size:0.83em;color:var(--text-muted);margin-top:3px;">Audit log of all system activities, customer updates, orders, and payments.</div>
+        <span class="section-title" style="font-size:1.15em;"><i class="fas fa-history" style="color:var(--primary);margin-right:8px;"></i>Recent Actions</span>
       </div>
       <div>
         <button class="btn btn-secondary btn-sm" onclick="_refreshActionsTable()"><i class="fas fa-sync-alt"></i> Refresh</button>
       </div>
     </div>
 
-    <!-- Stats Summary Cards -->
-    <div id="actions-stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;"></div>
+    <!-- Small Mini-Stats Bar -->
+    <div id="actions-stats-grid" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
 
-    <!-- Actions Table Card -->
-    <div class="card" style="padding:0;overflow:hidden;">
-      <div class="table-wrap" style="overflow-x:auto;">
-        <table class="table" style="width:100%;border-collapse:collapse;margin:0;">
+    <!-- Actions List Table Card -->
+    <div class="card" style="padding:0;overflow:hidden;display:block !important;">
+      <div style="display:block !important;overflow-x:auto;">
+        <table class="table" style="width:100%;border-collapse:collapse;margin:0;display:table !important;">
           <thead>
-            <tr>
-              <th style="padding:12px 14px;width:180px;">Timestamp</th>
-              <th style="padding:12px 14px;width:170px;">Action Type</th>
-              <th style="padding:12px 14px;width:130px;">Category</th>
-              <th style="padding:12px 14px;">Description</th>
-              <th style="padding:12px 14px;width:140px;">Performed By</th>
-              <th style="padding:12px 14px;text-align:center;width:90px;">Details</th>
+            <tr style="background:var(--bg-secondary);border-bottom:2px solid var(--border);">
+              <th style="padding:8px 12px;width:150px;font-size:0.82em;">Timestamp</th>
+              <th style="padding:8px 12px;width:150px;font-size:0.82em;">Action Type</th>
+              <th style="padding:8px 12px;width:120px;font-size:0.82em;">Category</th>
+              <th style="padding:8px 12px;font-size:0.82em;">Description</th>
+              <th style="padding:8px 12px;width:130px;font-size:0.82em;">Performed By</th>
+              <th style="padding:8px 12px;text-align:center;width:70px;font-size:0.82em;">Details</th>
             </tr>
           </thead>
           <tbody id="actions-table-body">
-            <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading recent actions...</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading recent actions...</td></tr>
           </tbody>
         </table>
       </div>
-      <div id="actions-pagination" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);"></div>
+      <div id="actions-pagination" style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);font-size:0.85em;"></div>
     </div>`;
 
   await _refreshActionsTable();
@@ -2599,10 +2598,34 @@ async function _refreshActionsTable() {
   const statsGrid = document.getElementById('actions-stats-grid');
   if (statsGrid) {
     statsGrid.innerHTML = `
-      ${statCard('Total Actions', sortedActions.length, 'fa-history', '#3b82f6', '#dbeafe', 'All recorded actions')}
-      ${statCard("Today's Actions", todayCount, 'fa-calendar-day', '#10b981', '#d1fae5', 'Activities today')}
-      ${statCard('Customer Changes', customerCount, 'fa-hotel', '#8b5cf6', '#f3e8ff', 'Add/Edit/Delete/Phone')}
-      ${statCard('Orders & Payments', orderCount, 'fa-boxes-stacked', '#06b6d4', '#cffafe', 'Orders & payments')}
+      <div style="flex:1;min-width:110px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.7em;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Total</div>
+          <div style="font-size:1.05em;font-weight:800;color:var(--primary);">${sortedActions.length}</div>
+        </div>
+        <i class="fas fa-history" style="color:var(--primary);font-size:0.95em;opacity:0.8;"></i>
+      </div>
+      <div style="flex:1;min-width:110px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.7em;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Today</div>
+          <div style="font-size:1.05em;font-weight:800;color:#10b981;">${todayCount}</div>
+        </div>
+        <i class="fas fa-calendar-day" style="color:#10b981;font-size:0.95em;opacity:0.8;"></i>
+      </div>
+      <div style="flex:1;min-width:110px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.7em;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Customer</div>
+          <div style="font-size:1.05em;font-weight:800;color:#8b5cf6;">${customerCount}</div>
+        </div>
+        <i class="fas fa-hotel" style="color:#8b5cf6;font-size:0.95em;opacity:0.8;"></i>
+      </div>
+      <div style="flex:1;min-width:110px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.7em;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Orders</div>
+          <div style="font-size:1.05em;font-weight:800;color:#06b6d4;">${orderCount}</div>
+        </div>
+        <i class="fas fa-boxes-stacked" style="color:#06b6d4;font-size:0.95em;opacity:0.8;"></i>
+      </div>
     `;
   }
 
@@ -2613,11 +2636,11 @@ async function _refreshActionsTable() {
   const pageItems = sortedActions.slice(startIdx, startIdx + actionsPerPage);
 
   if (pageItems.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:2em;margin-bottom:8px;">📋</div>No recent actions recorded</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:1.6em;margin-bottom:6px;">📋</div>No recent actions recorded</td></tr>`;
   } else {
     tbody.innerHTML = pageItems.map(a => {
       const dt = new Date(a.timestamp);
-      const timeFormatted = isNaN(dt.getTime()) ? '—' : dt.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const timeFormatted = isNaN(dt.getTime()) ? '—' : dt.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
       const relTime = getRelativeTime(a.timestamp);
 
       let badgeStyle = 'background:var(--secondary);color:var(--text);border:1px solid var(--border);';
@@ -2648,33 +2671,33 @@ async function _refreshActionsTable() {
       const catIcon = catIcons[a.category] || 'fa-tag';
 
       return `<tr style="border-bottom:1px solid var(--border);">
-        <td style="white-space:nowrap;padding:12px 14px;">
-          <div style="font-weight:600;font-size:0.88em;">${timeFormatted}</div>
-          <span style="font-size:0.75em;color:var(--text-muted);">${relTime}</span>
+        <td style="white-space:nowrap;padding:8px 12px;">
+          <div style="font-weight:600;font-size:0.83em;">${timeFormatted}</div>
+          <span style="font-size:0.72em;color:var(--text-muted);">${relTime}</span>
         </td>
-        <td style="padding:12px 14px;">
-          <span class="badge" style="${badgeStyle}font-size:0.78em;padding:4px 9px;">
-            <i class="fas ${icon}" style="font-size:0.85em;margin-right:4px;"></i>${at}
+        <td style="padding:8px 12px;">
+          <span class="badge" style="${badgeStyle}font-size:0.74em;padding:3px 7px;border-radius:6px;">
+            <i class="fas ${icon}" style="font-size:0.8em;margin-right:3px;"></i>${at}
           </span>
         </td>
-        <td style="padding:12px 14px;">
-          <span style="font-size:0.84em;color:var(--text-muted);font-weight:600;">
-            <i class="fas ${catIcon}" style="margin-right:4px;color:var(--primary);"></i>${a.category || 'System'}
+        <td style="padding:8px 12px;">
+          <span style="font-size:0.8em;color:var(--text-muted);font-weight:600;">
+            <i class="fas ${catIcon}" style="margin-right:3px;color:var(--primary);"></i>${a.category || 'System'}
           </span>
         </td>
-        <td style="padding:12px 14px;">
-          <div style="font-size:0.9em;font-weight:500;line-height:1.4;">${a.description || '—'}</div>
+        <td style="padding:8px 12px;">
+          <div style="font-size:0.85em;font-weight:500;line-height:1.3;">${a.description || '—'}</div>
         </td>
-        <td style="padding:12px 14px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75em;font-weight:700;flex-shrink:0;">
+        <td style="padding:8px 12px;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7em;font-weight:700;flex-shrink:0;">
               ${(a.user || 'A').charAt(0).toUpperCase()}
             </div>
-            <span style="font-size:0.85em;font-weight:600;">${a.user || 'System'}</span>
+            <span style="font-size:0.8em;font-weight:600;">${a.user || 'System'}</span>
           </div>
         </td>
-        <td style="text-align:center;padding:12px 14px;">
-          <button class="btn btn-secondary btn-sm" onclick="showActionDetailsModal('${a.id}')" title="View Payload Details">
+        <td style="text-align:center;padding:8px 12px;">
+          <button class="btn btn-secondary btn-sm" onclick="showActionDetailsModal('${a.id}')" style="padding:2px 8px;font-size:0.75em;" title="View Details">
             <i class="fas fa-info-circle"></i>
           </button>
         </td>
@@ -2685,7 +2708,7 @@ async function _refreshActionsTable() {
   const pg = document.getElementById('actions-pagination');
   if (pg) {
     pg.innerHTML = `
-      <span style="font-size:0.82em;color:var(--text-muted);">Showing ${sortedActions.length ? startIdx + 1 : 0} to ${Math.min(startIdx + actionsPerPage, sortedActions.length)} of ${sortedActions.length} entries</span>
+      <span style="font-size:0.8em;color:var(--text-muted);">Showing ${sortedActions.length ? startIdx + 1 : 0} to ${Math.min(startIdx + actionsPerPage, sortedActions.length)} of ${sortedActions.length} entries</span>
       ` + renderPagination(actionsPage, totalPages, 'changeActionsPage');
   }
 }
