@@ -112,6 +112,8 @@ function showModal(id) {
   const el = document.getElementById(id);
   if (el) {
     el.style.display = 'flex';
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
     // Ensure drag handle has swipe/click listener
     const handle = el.querySelector('.modal-drag-handle');
     if (handle && !handle.dataset.bound) {
@@ -125,6 +127,11 @@ function showModal(id) {
 function hideModal(id) {
   const el = document.getElementById(id);
   if (el) el.style.display = 'none';
+  const activeModals = document.querySelectorAll('.modal-overlay[style*="flex"]');
+  if (!activeModals || activeModals.length === 0) {
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+  }
 }
 
 function createModal(id, title, bodyHTML, size='') {
