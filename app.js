@@ -1110,27 +1110,17 @@ async function renderPayNow() {
     return;
   }
 
-  const [allOrders, customers] = await Promise.all([DB.getOrders(), DB.getCustomers()]);
-  const statusOpts = ORDER_STATUSES.map(s => `<option value="${s}" ${s === paynowStatusFilter ? 'selected' : ''}>${s}</option>`).join('');
-
   document.getElementById('content').innerHTML = `
-    <div class="section-header">
+    <div class="section-header" style="padding-right:6px;margin-bottom:14px;">
       <span class="section-title">Pending Payments</span>
-      <div style="display:flex;gap:8px;align-items:center;" id="batch-pay-header-btn"></div>
-    </div>
-    <div class="card" style="margin-bottom:18px;">
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-        <div class="search-wrap" style="flex:1;min-width:200px;">
+      <div style="display:flex;gap:6px;align-items:center;margin-right:4px;">
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="openGlobalSearchModal()" title="Search Pay Now [Ctrl+K]">
           <i class="fas fa-search"></i>
-          <input class="form-input" id="paynow-search-input" placeholder="Search invoice #, order batch ID, customer..."
-            autocomplete="off" spellcheck="false"
-            oninput="paynowSearch=this.value;paynowPage=1;_refreshPayNowTable()"/>
-        </div>
-        <select class="form-input form-select" id="paynow-filter-sel" style="width:170px;" onchange="paynowStatusFilter=this.value;paynowPage=1;_refreshPayNowTable()">
-          <option value="">All Statuses</option>
-          ${statusOpts}
-        </select>
-        <span id="paynow-count" style="font-size:0.82em;color:var(--text-muted);"></span>
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleSelectAllPayNowMobile()" title="Select/Deselect All">
+          <i class="fas fa-check-double"></i> Select All
+        </button>
+        <div id="batch-pay-header-btn"></div>
       </div>
     </div>
     <div class="card" style="padding:0;">
@@ -1158,7 +1148,7 @@ async function renderPayNow() {
     </div>`;
 
   await _refreshPayNowTable();
-  document.getElementById('paynow-search-input').focus();
+  document.getElementById('paynow-search-input')?.focus();
 }
 
 async function _refreshPayNowTable() {
@@ -1251,21 +1241,25 @@ async function _refreshPayNowTable() {
           const inv = invMap[o.id];
           const invNum = inv?.invoice_number || '—';
           const balance = inv ? inv.balance : Math.max(0, (o.total_amount || 0) - (o.advance_payment || 0));
+          const isChecked = paynowSelectedIds.includes(o.id) ? 'checked' : '';
           return `
-            <div class="mobile-card">
-              <div class="mobile-card-top">
-                <div class="mobile-card-title">${o.batch_id || '—'}</div>
+            <div class="mobile-card" style="${isChecked ? 'border-left: 4px solid #22c55e; background: var(--bg-hover, #f8fafc);' : ''}">
+              <div class="mobile-card-top" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <input type="checkbox" class="paynow-checkbox" data-order-id="${o.id}" ${isChecked} onchange="onPayNowCheckboxChange()" style="width:20px;height:20px;cursor:pointer;accent-color:#22c55e;margin:0;"/>
+                  <span class="mobile-card-title" style="font-size:0.92em;font-weight:700;">${o.batch_id || '—'}</span>
+                </div>
                 ${statusBadge(o.status)}
               </div>
-              <div class="mobile-card-grid">
+              <div class="mobile-card-grid" style="font-size:0.84em;gap:6px;">
                 <div class="mobile-card-kv"><span class="mobile-card-label">Customer</span><span class="mobile-card-value">${getOrderCustomerName(o, cMap)}</span></div>
                 <div class="mobile-card-kv"><span class="mobile-card-label">Invoice #</span><span class="mobile-card-value">${invNum}</span></div>
                 <div class="mobile-card-kv"><span class="mobile-card-label">Pickup Date</span><span class="mobile-card-value">${formatDate(o.pickup_date)}</span></div>
-                <div class="mobile-card-kv"><span class="mobile-card-label">Balance</span><span class="mobile-card-value" style="color:var(--danger);">${formatCurrency(balance)}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Balance</span><span class="mobile-card-value" style="color:var(--danger);font-weight:700;">${formatCurrency(balance)}</span></div>
               </div>
-              <div class="mobile-card-actions">
-                ${canEditPayNow() ? `<button class="btn btn-success btn-sm" onclick="showPayNowOptionsModal(${o.id})" style="background:#22c55e;border-color:#16a34a;font-weight:700;"><i class="fas fa-money-bill-wave"></i> Pay Now</button>` : ''}
-                <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails(${o.id})"><i class="fas fa-eye"></i> View</button>
+              <div class="mobile-card-actions" style="margin-top:10px;">
+                ${canEditPayNow() ? `<button class="btn btn-success btn-sm" onclick="showPayNowOptionsModal(${o.id})" style="background:#22c55e;border-color:#16a34a;font-weight:700;padding:6px 12px;font-size:0.82em;"><i class="fas fa-money-bill-wave"></i> Pay Now</button>` : ''}
+                <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails(${o.id})" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-eye"></i> View</button>
               </div>
             </div>`;
         }).join('');
@@ -1347,14 +1341,32 @@ function updateBatchPayButtonHeader() {
   const container = document.getElementById('batch-pay-header-btn');
   if (!container) return;
 
-  if (paynowSelectedIds.length >= 2) {
+  if (paynowSelectedIds.length >= 1) {
     container.innerHTML = `
-      <button class="btn btn-success" style="background:#22c55e; border-color:#16a34a; font-weight:700;" onclick="showBatchPayConfirmModal()">
+      <button class="btn btn-success btn-sm" style="background:#22c55e; border-color:#16a34a; font-weight:700; padding:6px 12px; font-size:0.82em;" onclick="showBatchPayConfirmModal()">
         <i class="fas fa-hand-holding-dollar"></i> Batch PAY (${paynowSelectedIds.length})
       </button>`;
   } else {
     container.innerHTML = '';
   }
+}
+
+async function toggleSelectAllPayNowMobile() {
+  const [orders, invoices] = await Promise.all([DB.getOrders(), DB.getInvoices()]);
+  const invMap = Object.fromEntries(invoices.map(i => [i.order_id, i]));
+  const allPendingIds = orders
+    .filter(o => {
+      const inv = invMap[o.id];
+      return inv ? inv.paid_status !== 'Paid' : o.status !== 'Paid';
+    })
+    .map(o => o.id);
+
+  if (paynowSelectedIds.length >= allPendingIds.length && allPendingIds.length > 0) {
+    paynowSelectedIds = [];
+  } else {
+    paynowSelectedIds = allPendingIds;
+  }
+  _refreshPayNowTable();
 }
 
 async function showPayNowOptionsModal(orderId) {

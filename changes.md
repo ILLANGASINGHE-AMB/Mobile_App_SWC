@@ -1,10 +1,9 @@
-In Orders Tab,
-The buttons show when touch on Filter button are messy,
+In the Pay Now Tab,
 
-they should be optimzed for mobile view
+reduce text size
 
-status        Customer
-----------   ----------
-----------   ----------
+change the search bar to icon as in dashboard with function
 
-remove driver from filter option
+add select button per order to perform bacth pay option
+
+add make all buton sizes optimized for mobile view
