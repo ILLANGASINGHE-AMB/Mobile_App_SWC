@@ -501,9 +501,9 @@ async function renderCustomers() {
   document.getElementById('page-title').textContent = 'Customers';
   if (document.getElementById('cust-table-body')) { await _refreshCustomersTable(); return; }
   document.getElementById('content').innerHTML = `
-    <div class="section-header" style="padding-right:6px;margin-bottom:14px;">
-      <span class="section-title">Hotel Customers</span>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-right:4px;">
+    <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-right:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <span class="section-title" style="margin-right:auto;">Hotel Customers</span>
+      <div style="display:flex;gap:6px;align-items:center;margin-right:4px;">
         <button class="btn btn-secondary btn-sm btn-icon" onclick="openGlobalSearchModal()" title="Search Customers [Ctrl+K]">
           <i class="fas fa-search"></i>
         </button>
@@ -512,7 +512,7 @@ async function renderCustomers() {
           <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cust-import-file').click()" title="Import customers from JSON"><i class="fas fa-upload"></i> Import</button>
           <input type="file" id="cust-import-file" accept=".json" style="display:none" onchange="importCustomers(this)"/>
         ` : ''}
-        <button class="btn btn-primary btn-sm" onclick="showAddCustomerModal()"><i class="fas fa-plus"></i> Add Customer</button>
+        <button class="btn btn-primary btn-sm" onclick="showAddCustomerModal()" style="margin-left:4px;"><i class="fas fa-plus"></i> Add Customer</button>
       </div>
     </div>
     <div class="card" style="padding:0;">
