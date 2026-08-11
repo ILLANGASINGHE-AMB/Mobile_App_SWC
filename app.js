@@ -73,10 +73,10 @@ function isDriver() { return currentUser && currentUser.role === 'driver'; }
 
 function getRoleAllowedPages() {
   if (isAdmin()) {
-    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'deductions', 'items', 'expenses', 'reports', 'recent-actions', 'settings'];
+    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'deductions', 'items', 'reports', 'recent-actions', 'settings'];
   }
   if (isStaffUser()) {
-    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'deductions', 'items', 'expenses', 'settings'];
+    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'deductions', 'items', 'settings'];
   }
   if (isDriver()) {
     return ['transport', 'customers', 'orders', 'settings'];

@@ -165,7 +165,6 @@ const ALL_NAV_ITEMS = {
   paynow:         { label: 'Pay Now',   icon: 'fa-money-bill-wave' },
   deductions:     { label: 'Deductions',icon: 'fa-scissors' },
   items:          { label: 'Items',     icon: 'fa-list-check' },
-  expenses:       { label: 'Expenses',  icon: 'fa-receipt' },
   reports:        { label: 'Reports',   icon: 'fa-chart-bar' },
   'recent-actions':{ label: 'Actions',  icon: 'fa-history' },
   settings:       { label: 'Settings',  icon: 'fa-cog' }
