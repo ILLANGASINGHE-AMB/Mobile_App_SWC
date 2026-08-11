@@ -1,12 +1,8 @@
-In reports tab,
-keep only
-Daily Orders
-Monthley Bills
-Customer Billing
-Full Report
+The Settings Page is a fully mess
+Completely optimize it for the mobile view,
 
-remove 
-Customer Summary
-
-
-also the print button should view PDF bill should not open print popup
+Only remove these UI Controls
+-App Logo Change Part
+-User Management Part
+-Database Management Part
+-Gemini AI Integration Part
