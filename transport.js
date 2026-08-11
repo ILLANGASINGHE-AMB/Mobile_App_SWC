@@ -39,13 +39,6 @@ const TransportModule = {
           <!-- Dynamic Stats Cards -->
         </div>
 
-        <!-- Driver Mobile FAB -->
-        ${canEditTransport() ? `
-          <button onclick="TransportModule.openStartTripModal()" class="driver-fab" title="Start New Trip">
-            <i class="fa-solid fa-plus"></i>
-          </button>
-        ` : ''}
-
         <!-- Main Content Table Container -->
         <div id="transport-main-container"></div>
       </div>
@@ -303,9 +296,9 @@ const TransportModule = {
     }
 
     const html = `
-      <div id="start-trip-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4">
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
+      <div id="start-trip-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 pb-24 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[85vh] sm:max-h-[90vh] flex flex-col mb-14 sm:mb-0">
+          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 shrink-0">
             <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-play text-indigo-600"></i> Start New Trip (${tripId})
             </h3>
@@ -314,7 +307,7 @@ const TransportModule = {
             </button>
           </div>
 
-          <form onsubmit="TransportModule.saveStartTrip(event)" class="space-y-4 text-left">
+          <form onsubmit="TransportModule.saveStartTrip(event)" class="space-y-4 text-left overflow-y-auto flex-1 pr-1 pb-10">
             <div class="flex gap-3.5 w-full">
               <div class="flex-1 min-w-0 overflow-hidden">
                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Trip ID</label>
@@ -586,8 +579,8 @@ const TransportModule = {
     const defaultEndTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const html = `
-      <div id="end-trip-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] flex flex-col">
+      <div id="end-trip-modal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 pb-24 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-4 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[82vh] sm:max-h-[90vh] flex flex-col mb-14 sm:mb-0">
           <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3 shrink-0">
             <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-flag-checkered text-emerald-600"></i> Complete Trip (${trip.trip_id})
@@ -597,7 +590,7 @@ const TransportModule = {
             </button>
           </div>
 
-          <form onsubmit="TransportModule.saveEndTrip(event, '${trip.id}')" class="space-y-4 text-left overflow-y-auto flex-1 pr-1">
+          <form onsubmit="TransportModule.saveEndTrip(event, '${trip.id}')" class="space-y-4 text-left overflow-y-auto flex-1 pr-1 pb-14">
             <!-- Trip Overview Banner -->
             <div class="bg-slate-100 dark:bg-slate-700/50 p-3 rounded-xl text-xs space-y-1">
               <div class="flex justify-between text-slate-600 dark:text-slate-300">
