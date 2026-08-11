@@ -2543,105 +2543,36 @@ async function renderRecentActions() {
   }
 
   document.getElementById('content').innerHTML = `
-    <div class="section-header">
+    <div class="section-header" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
       <div>
         <span class="section-title"><i class="fas fa-history" style="color:var(--primary);margin-right:8px;"></i>Recent System Actions</span>
-        <div style="font-size:0.83em;color:var(--text-muted);margin-top:2px;">Complete audit log of system operations, customer additions, phone changes, orders, and payments.</div>
+        <div style="font-size:0.83em;color:var(--text-muted);margin-top:3px;">Audit log of all system activities, customer updates, orders, and payments.</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn btn-secondary" onclick="_refreshActionsTable()"><i class="fas fa-sync-alt"></i> Refresh</button>
-        <button class="btn btn-secondary" onclick="exportActionsCSV()"><i class="fas fa-file-csv"></i> CSV Export</button>
-        <button class="btn btn-secondary" onclick="exportActionsJSON()"><i class="fas fa-file-code"></i> JSON Export</button>
-        ${isAdmin() ? `<button class="btn btn-danger" onclick="clearActionsConfirm()"><i class="fas fa-trash-alt"></i> Clear Logs</button>` : ''}
+      <div>
+        <button class="btn btn-secondary btn-sm" onclick="_refreshActionsTable()"><i class="fas fa-sync-alt"></i> Refresh</button>
       </div>
     </div>
 
     <!-- Stats Summary Cards -->
-    <div id="actions-stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:22px;"></div>
+    <div id="actions-stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;"></div>
 
-    <!-- Filter Card -->
-    <div class="card" style="margin-bottom:20px;padding:18px;">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:12px;align-items:center;">
-        <div class="search-wrap">
-          <i class="fas fa-search"></i>
-          <input class="form-input" id="actions-search-input" placeholder="Search actions, customers, phone numbers, order IDs..."
-            value="${actionsSearch}" oninput="actionsSearch=this.value;actionsPage=1;_refreshActionsTable()"/>
-        </div>
-
-        <div>
-          <select class="form-input form-select" id="actions-category-select" onchange="actionsCategoryFilter=this.value;actionsPage=1;_refreshActionsTable()">
-            <option value="ALL" ${actionsCategoryFilter==='ALL'?'selected':''}>All Categories</option>
-            <option value="Transport" ${actionsCategoryFilter==='Transport'?'selected':''}>Transport</option>
-            <option value="Expense" ${actionsCategoryFilter==='Expense'?'selected':''}>Expense</option>
-            <option value="Chemical" ${actionsCategoryFilter==='Chemical'?'selected':''}>Chemical</option>
-            <option value="Customer" ${actionsCategoryFilter==='Customer'?'selected':''}>Customer</option>
-            <option value="Order" ${actionsCategoryFilter==='Order'?'selected':''}>Order</option>
-            <option value="Driver" ${actionsCategoryFilter==='Driver'?'selected':''}>Driver</option>
-            <option value="Item" ${actionsCategoryFilter==='Item'?'selected':''}>Item</option>
-            <option value="Payment" ${actionsCategoryFilter==='Payment'?'selected':''}>Payment</option>
-            <option value="System" ${actionsCategoryFilter==='System'?'selected':''}>System</option>
-            <option value="User" ${actionsCategoryFilter==='User'?'selected':''}>User</option>
-          </select>
-        </div>
-
-        <div>
-          <select class="form-input form-select" id="actions-type-select" onchange="actionsTypeFilter=this.value;actionsPage=1;_refreshActionsTable()">
-            <option value="ALL">All Action Types</option>
-            <option value="Start Trip">Start Trip</option>
-            <option value="Set Trip Customers">Set Trip Customers</option>
-            <option value="End Trip">End Trip</option>
-            <option value="Delete Trip">Delete Trip</option>
-            <option value="Add General Expense">Add General Expense</option>
-            <option value="Delete Expense">Delete Expense</option>
-            <option value="Chemical Stock IN">Chemical Stock IN</option>
-            <option value="Chemical Stock OUT">Chemical Stock OUT</option>
-            <option value="Add Chemical Master">Add Chemical Master</option>
-            <option value="Delete Chemical Master">Delete Chemical Master</option>
-            <option value="Add Customer">Add Customer</option>
-            <option value="Phone Number Change">Phone Number Change</option>
-            <option value="Edit Customer">Edit Customer</option>
-            <option value="Delete Customer">Delete Customer</option>
-            <option value="New Order Add">New Order Add</option>
-            <option value="Edit Order">Edit Order</option>
-            <option value="Delete Order">Delete Order</option>
-            <option value="Payment Received">Payment Received</option>
-            <option value="Deduction Added">Deduction Added</option>
-            <option value="Add Driver">Add Driver</option>
-            <option value="Add Item">Add Item</option>
-            <option value="Settings Updated">Settings Updated</option>
-            <option value="User Login">User Login</option>
-          </select>
-        </div>
-
-        <div>
-          <select class="form-input form-select" id="actions-date-select" onchange="actionsDateFilter=this.value;actionsPage=1;_refreshActionsTable()">
-            <option value="ALL">All Time</option>
-            <option value="TODAY">Today</option>
-            <option value="YESTERDAY">Yesterday</option>
-            <option value="LAST_7_DAYS">Last 7 Days</option>
-            <option value="LAST_30_DAYS">Last 30 Days</option>
-          </select>
-        </div>
-
-        <button class="btn btn-secondary" onclick="resetActionsFilters()"><i class="fas fa-undo"></i> Reset</button>
-      </div>
-    </div>
-
-    <!-- Table Card -->
-    <div class="card" style="padding:0;">
-      <div class="table-wrap">
-        <table>
+    <!-- Actions Table Card -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap" style="overflow-x:auto;">
+        <table class="table" style="width:100%;border-collapse:collapse;margin:0;">
           <thead>
             <tr>
-              <th>Timestamp</th>
-              <th>Action Type</th>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Performed By</th>
-              <th style="text-align:center;">Details</th>
+              <th style="padding:12px 14px;width:180px;">Timestamp</th>
+              <th style="padding:12px 14px;width:170px;">Action Type</th>
+              <th style="padding:12px 14px;width:130px;">Category</th>
+              <th style="padding:12px 14px;">Description</th>
+              <th style="padding:12px 14px;width:140px;">Performed By</th>
+              <th style="padding:12px 14px;text-align:center;width:90px;">Details</th>
             </tr>
           </thead>
-          <tbody id="actions-table-body"></tbody>
+          <tbody id="actions-table-body">
+            <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading recent actions...</td></tr>
+          </tbody>
         </table>
       </div>
       <div id="actions-pagination" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);"></div>
@@ -2656,56 +2587,19 @@ async function _refreshActionsTable() {
 
   const allActions = await DB.getActions();
 
-  // Filter Data
-  let filtered = allActions.filter(a => {
-    // Search
-    if (actionsSearch) {
-      const q = actionsSearch.toLowerCase();
-      const matchDesc = (a.description || '').toLowerCase().includes(q);
-      const matchType = (a.action_type || '').toLowerCase().includes(q);
-      const matchUser = (a.user || '').toLowerCase().includes(q);
-      const matchCat = (a.category || '').toLowerCase().includes(q);
-      const matchDet = JSON.stringify(a.details || {}).toLowerCase().includes(q);
-      if (!matchDesc && !matchType && !matchUser && !matchCat && !matchDet) return false;
-    }
-    // Category
-    if (actionsCategoryFilter !== 'ALL' && a.category !== actionsCategoryFilter) return false;
-    // Action Type
-    if (actionsTypeFilter !== 'ALL' && a.action_type !== actionsTypeFilter) return false;
-    // Date Filter
-    if (actionsDateFilter !== 'ALL' && a.timestamp) {
-      const actDate = new Date(a.timestamp);
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      if (actionsDateFilter === 'TODAY') {
-        if (actDate < todayStart) return false;
-      } else if (actionsDateFilter === 'YESTERDAY') {
-        const yestStart = new Date(todayStart);
-        yestStart.setDate(yestStart.getDate() - 1);
-        if (actDate < yestStart || actDate >= todayStart) return false;
-      } else if (actionsDateFilter === 'LAST_7_DAYS') {
-        const d7 = new Date(todayStart);
-        d7.setDate(d7.getDate() - 7);
-        if (actDate < d7) return false;
-      } else if (actionsDateFilter === 'LAST_30_DAYS') {
-        const d30 = new Date(todayStart);
-        d30.setDate(d30.getDate() - 30);
-        if (actDate < d30) return false;
-      }
-    }
-    return true;
-  });
+  // Sort newest first
+  const sortedActions = [...allActions].sort((a,b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
 
   // Calculate Stats
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayCount = allActions.filter(a => (a.timestamp || '').startsWith(todayStr)).length;
-  const customerCount = allActions.filter(a => a.category === 'Customer').length;
-  const orderCount = allActions.filter(a => a.category === 'Order' || a.category === 'Payment').length;
+  const todayCount = sortedActions.filter(a => (a.timestamp || '').startsWith(todayStr)).length;
+  const customerCount = sortedActions.filter(a => a.category === 'Customer').length;
+  const orderCount = sortedActions.filter(a => a.category === 'Order' || a.category === 'Payment').length;
 
   const statsGrid = document.getElementById('actions-stats-grid');
   if (statsGrid) {
     statsGrid.innerHTML = `
-      ${statCard('Total Actions', allActions.length, 'fa-history', '#3b82f6', '#dbeafe', 'All recorded actions')}
+      ${statCard('Total Actions', sortedActions.length, 'fa-history', '#3b82f6', '#dbeafe', 'All recorded actions')}
       ${statCard("Today's Actions", todayCount, 'fa-calendar-day', '#10b981', '#d1fae5', 'Activities today')}
       ${statCard('Customer Changes', customerCount, 'fa-hotel', '#8b5cf6', '#f3e8ff', 'Add/Edit/Delete/Phone')}
       ${statCard('Orders & Payments', orderCount, 'fa-boxes-stacked', '#06b6d4', '#cffafe', 'Orders & payments')}
@@ -2713,13 +2607,13 @@ async function _refreshActionsTable() {
   }
 
   // Paginate
-  const totalPages = Math.ceil(filtered.length / actionsPerPage) || 1;
+  const totalPages = Math.ceil(sortedActions.length / actionsPerPage) || 1;
   if (actionsPage > totalPages) actionsPage = totalPages;
   const startIdx = (actionsPage - 1) * actionsPerPage;
-  const pageItems = filtered.slice(startIdx, startIdx + actionsPerPage);
+  const pageItems = sortedActions.slice(startIdx, startIdx + actionsPerPage);
 
   if (pageItems.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:2em;margin-bottom:8px;">🔍</div>No matching actions found</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);"><div style="font-size:2em;margin-bottom:8px;">📋</div>No recent actions recorded</td></tr>`;
   } else {
     tbody.innerHTML = pageItems.map(a => {
       const dt = new Date(a.timestamp);
@@ -2753,33 +2647,33 @@ async function _refreshActionsTable() {
       const catIcons = { Customer: 'fa-hotel', Order: 'fa-boxes-stacked', Driver: 'fa-truck', Item: 'fa-list-check', Payment: 'fa-coins', System: 'fa-cog', User: 'fa-user-shield' };
       const catIcon = catIcons[a.category] || 'fa-tag';
 
-      return `<tr>
-        <td style="white-space:nowrap;">
+      return `<tr style="border-bottom:1px solid var(--border);">
+        <td style="white-space:nowrap;padding:12px 14px;">
           <div style="font-weight:600;font-size:0.88em;">${timeFormatted}</div>
           <span style="font-size:0.75em;color:var(--text-muted);">${relTime}</span>
         </td>
-        <td>
-          <span class="badge" style="${badgeStyle}">
+        <td style="padding:12px 14px;">
+          <span class="badge" style="${badgeStyle}font-size:0.78em;padding:4px 9px;">
             <i class="fas ${icon}" style="font-size:0.85em;margin-right:4px;"></i>${at}
           </span>
         </td>
-        <td>
+        <td style="padding:12px 14px;">
           <span style="font-size:0.84em;color:var(--text-muted);font-weight:600;">
             <i class="fas ${catIcon}" style="margin-right:4px;color:var(--primary);"></i>${a.category || 'System'}
           </span>
         </td>
-        <td>
+        <td style="padding:12px 14px;">
           <div style="font-size:0.9em;font-weight:500;line-height:1.4;">${a.description || '—'}</div>
         </td>
-        <td>
+        <td style="padding:12px 14px;">
           <div style="display:flex;align-items:center;gap:6px;">
-            <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.72em;font-weight:700;flex-shrink:0;">
+            <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75em;font-weight:700;flex-shrink:0;">
               ${(a.user || 'A').charAt(0).toUpperCase()}
             </div>
             <span style="font-size:0.85em;font-weight:600;">${a.user || 'System'}</span>
           </div>
         </td>
-        <td style="text-align:center;">
+        <td style="text-align:center;padding:12px 14px;">
           <button class="btn btn-secondary btn-sm" onclick="showActionDetailsModal('${a.id}')" title="View Payload Details">
             <i class="fas fa-info-circle"></i>
           </button>
@@ -2791,7 +2685,7 @@ async function _refreshActionsTable() {
   const pg = document.getElementById('actions-pagination');
   if (pg) {
     pg.innerHTML = `
-      <span style="font-size:0.82em;color:var(--text-muted);">Showing ${filtered.length ? startIdx + 1 : 0} to ${Math.min(startIdx + actionsPerPage, filtered.length)} of ${filtered.length} entries</span>
+      <span style="font-size:0.82em;color:var(--text-muted);">Showing ${sortedActions.length ? startIdx + 1 : 0} to ${Math.min(startIdx + actionsPerPage, sortedActions.length)} of ${sortedActions.length} entries</span>
       ` + renderPagination(actionsPage, totalPages, 'changeActionsPage');
   }
 }
