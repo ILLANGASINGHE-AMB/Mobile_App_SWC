@@ -3,16 +3,14 @@
 async function renderReports() {
   document.getElementById('page-title').textContent = 'Reports';
   document.getElementById('content').innerHTML = `
-    <div class="section-header">
+    <div class="section-header" style="margin-bottom:14px;">
       <span class="section-title">Reports & Analytics</span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:24px;">
-      ${reportCard('Daily Orders',      "Today's order summary",             'fa-calendar-day',  'badge-blue',   'generateDailyOrdersReport()')}
-      ${reportCard('Monthly Revenue',   'Revenue breakdown by month',        'fa-chart-line',    'badge-green',  'generateMonthlyRevenueReport()')}
-      ${reportCard('Customer Billing',  'Per-customer billing summary',      'fa-hotel',         'badge-purple', 'generateCustomerBillingReport()')}
-      ${reportCard('Full Report',       'Complete report with date filter',  'fa-file-alt',      'badge-cyan',   'showFullReportModal()')}
-      ${reportCard('Customer Summary',  'Customer details and item columns', 'fa-file-invoice',  'badge-red',    'showCustomerSummaryModal()')}
-      ${reportCard('Monthly Bills',     'Per-month order bills summary',     'fa-receipt',       'badge-orange', 'showMonthlyBillsModal()')}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-bottom:24px;">
+      ${reportCard('Daily Orders',     "Today's order summary",            'fa-calendar-day', 'badge-blue',   'generateDailyOrdersReport()')}
+      ${reportCard('Monthly Bills',    'Per-month order bills summary',    'fa-receipt',      'badge-orange', 'showMonthlyBillsModal()')}
+      ${reportCard('Customer Billing', 'Per-customer billing summary',     'fa-hotel',        'badge-purple', 'generateCustomerBillingReport()')}
+      ${reportCard('Full Report',      'Complete report with date filter', 'fa-file-alt',     'badge-cyan',   'showFullReportModal()')}
     </div>
     <div id="report-output"></div>`;
 }
@@ -1177,14 +1175,18 @@ async function printMonthlyBills() {
       <style>
         *{box-sizing:border-box;margin:0;padding:0;}
         body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;font-size:11px;}
-        @page{size:A4 portrait;margin:14mm 12mm;}
+        @media print{body{margin:0;}.no-print{display:none !important;}@page{size:A4 portrait;margin:14mm 12mm;}}
         table{width:100%;border-collapse:collapse;}
         thead{display:table-header-group;}
         tr{page-break-inside:avoid;}
         th{background:#1a4d8f;color:#fff;padding:8px 9px;text-align:left;font-size:0.82em;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;}
         td{border-bottom:1px solid #eef2f7;}
       </style></head><body>
-      <div style="padding:4px 6px;">
+      <div class="no-print" style="position:sticky;top:0;left:0;right:0;background:#0f172a;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-family:sans-serif;">
+        <div style="font-weight:700;font-size:0.95em;">📄 Monthly Bills Preview &mdash; ${monthLabel}</div>
+        <button onclick="window.print()" style="background:#0d9488;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-weight:700;font-size:0.85em;cursor:pointer;">Print / Save PDF</button>
+      </div>
+      <div style="padding:24px 28px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #e2e8f0;padding-bottom:14px;margin-bottom:16px;">
           <div style="display:flex;align-items:center;gap:12px;">
             ${logoHTML}
@@ -1239,7 +1241,6 @@ async function printMonthlyBills() {
           ${settings.company_name} &mdash; Monthly Bills &mdash; ${monthLabel}
         </div>
       </div>
-      <script>document.fonts.ready.then(()=>window.print());<\/script>
       </body></html>`;
 
     const w = window.open('', '_blank');

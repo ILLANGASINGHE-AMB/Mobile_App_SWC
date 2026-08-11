@@ -992,9 +992,19 @@ async function printInvoice(id) {
     <style>
       *{box-sizing:border-box;margin:0;padding:0;}
       body{font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;}
-      @media print{body{margin:0;}@page{margin:12mm 10mm;size:A4;}}
+      @media print{body{margin:0;}.no-print{display:none !important;}@page{margin:12mm 10mm;size:A4;}}
     </style>
     </head><body>
+    <div class="no-print" style="position:sticky;top:0;left:0;right:0;background:#0f172a;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-family:sans-serif;">
+      <div style="font-weight:700;font-size:0.95em;display:flex;align-items:center;gap:8px;">
+        📄 PDF Bill Preview &mdash; ${inv.invoice_number || 'Bill'}
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="window.print()" style="background:#0d9488;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-weight:700;font-size:0.85em;cursor:pointer;">
+          Print / Save PDF
+        </button>
+      </div>
+    </div>
     <div style="position:relative;font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;max-width:780px;margin:0 auto;padding:40px 44px;">
       ${creditBanner}
       
@@ -1120,7 +1130,6 @@ async function printInvoice(id) {
       </div>
       </div>
     </div>
-    <script>document.fonts.ready.then(()=>window.print());<\/script>
     </body></html>`;
 
   if (typeof html2pdf !== 'undefined') {
