@@ -1,0 +1,15 @@
+{
+  "name": "Sagacious Washing Center",
+  "short_name": "SAGA WC",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f2d5c",
+  "theme_color": "#0f2d5c",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

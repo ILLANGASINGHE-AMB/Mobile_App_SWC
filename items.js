@@ -119,6 +119,30 @@ async function _refreshItemsTable() {
         </div></td>
       </tr>`).join('');
 
+  // Update Mobile Cards
+  const mobileCardsEl = document.getElementById('items-mobile-cards');
+  if (mobileCardsEl) {
+    mobileCardsEl.innerHTML = items.length === 0
+      ? `<div style="text-align:center;padding:24px;color:var(--text-muted);">No items found</div>`
+      : items.map(item => `
+        <div class="mobile-card">
+          <div class="mobile-card-top">
+            <div class="mobile-card-title">${item.item_name}</div>
+            <span style="font-family:monospace;font-weight:700;font-size:0.85em;background:var(--bg);padding:2px 8px;border-radius:6px;border:1px solid var(--border);">${item.item_id}</span>
+          </div>
+          <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">${item.description || 'No description'}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;text-align:center;background:var(--bg);padding:8px;border-radius:8px;border:1px solid var(--border);">
+            <div><div class="mobile-card-label">Dry Clean</div><div class="mobile-card-value" style="font-size:0.82em;">${formatCurrency(item.dry_clean_price||0)}</div></div>
+            <div><div class="mobile-card-label">Wash & Press</div><div class="mobile-card-value" style="font-size:0.82em;">${formatCurrency(item.wash_press_price||0)}</div></div>
+            <div><div class="mobile-card-label">Wash & Dry</div><div class="mobile-card-value" style="font-size:0.82em;">${formatCurrency(item.wash_dry_price||0)}</div></div>
+          </div>
+          <div class="mobile-card-actions">
+            ${canEditItems()?`<button class="btn btn-primary btn-sm" onclick="showEditItemModal(${item.id})"><i class="fas fa-edit"></i> Edit</button>`:''}
+            ${canDelete()?`<button class="btn btn-danger btn-sm" onclick="deleteItemConfirm(${item.id})"><i class="fas fa-trash"></i> Delete</button>`:''}
+          </div>
+        </div>`).join('');
+  }
+
   const pg=document.getElementById('items-pagination');
   if(pg) pg.innerHTML=`<span style="font-size:0.82em;color:var(--text-muted);">Page ${itemsPage} of ${totalPages}</span>`+renderPagination(itemsPage,totalPages,'changeItemsPage');
 }

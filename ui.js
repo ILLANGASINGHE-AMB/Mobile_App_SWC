@@ -104,17 +104,134 @@ function toast(message, type = 'success', duration = 3000) {
   setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(40px)'; el.style.transition='0.3s'; setTimeout(()=>el.remove(),400); }, duration);
 }
 
-function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-function hideModal(id) { const el=document.getElementById(id); if(el) el.style.display='none'; }
+function isMobileView() {
+  return window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth <= 1024);
+}
+
+function showModal(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.display = 'flex';
+    // Ensure drag handle has swipe/click listener
+    const handle = el.querySelector('.modal-drag-handle');
+    if (handle && !handle.dataset.bound) {
+      handle.dataset.bound = 'true';
+      handle.style.cursor = 'pointer';
+      handle.addEventListener('click', () => hideModal(id));
+    }
+  }
+}
+
+function hideModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
 
 function createModal(id, title, bodyHTML, size='') {
-  let m = document.getElementById(id); if(m) m.remove();
+  let m = document.getElementById(id);
+  if (m) m.remove();
   const overlay = document.createElement('div');
-  overlay.className='modal-overlay'; overlay.id=id; overlay.style.display='none';
-  overlay.innerHTML=`<div class="modal ${size}" onclick="event.stopPropagation()"><div class="modal-header"><span class="modal-title">${title}</span><button class="modal-close" onclick="hideModal('${id}')"><i class="fas fa-times"></i></button></div><div id="${id}-body">${bodyHTML}</div></div>`;
-  overlay.addEventListener('click',()=>hideModal(id));
-  document.body.appendChild(overlay); return overlay;
+  overlay.className = 'modal-overlay';
+  overlay.id = id;
+  overlay.style.display = 'none';
+  overlay.innerHTML = `
+    <div class="modal ${size}" onclick="event.stopPropagation()">
+      <div class="modal-drag-handle" title="Tap to close"></div>
+      <div class="modal-header">
+        <span class="modal-title">${title}</span>
+        <button class="modal-close" onclick="hideModal('${id}')"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="${id}-body">${bodyHTML}</div>
+    </div>`;
+  overlay.addEventListener('click', () => hideModal(id));
+  document.body.appendChild(overlay);
+  return overlay;
 }
+
+// ─── Role-Aware Mobile Bottom Navigation ───
+const ALL_NAV_ITEMS = {
+  dashboard:      { label: 'Home',      icon: 'fa-home' },
+  orders:         { label: 'Orders',    icon: 'fa-boxes-stacked' },
+  transport:      { label: 'Transport', icon: 'fa-truck-fast' },
+  customers:      { label: 'Customers', icon: 'fa-users' },
+  drivers:        { label: 'Drivers',   icon: 'fa-truck' },
+  paynow:         { label: 'Pay Now',   icon: 'fa-money-bill-wave' },
+  invoices:       { label: 'Invoices',  icon: 'fa-file-invoice' },
+  deductions:     { label: 'Deductions',icon: 'fa-scissors' },
+  items:          { label: 'Items',     icon: 'fa-list-check' },
+  expenses:       { label: 'Expenses',  icon: 'fa-receipt' },
+  analytics:      { label: 'Analytics', icon: 'fa-chart-line' },
+  reports:        { label: 'Reports',   icon: 'fa-chart-bar' },
+  'recent-actions':{ label: 'Actions',  icon: 'fa-history' },
+  settings:       { label: 'Settings',  icon: 'fa-cog' }
+};
+
+function renderBottomNav(role = 'admin') {
+  const container = document.getElementById('mobile-bottom-nav');
+  if (!container) return;
+
+  let primaryKeys = [];
+  if (role === 'driver') {
+    primaryKeys = ['transport', 'customers', 'orders'];
+  } else if (role === 'user') {
+    primaryKeys = ['dashboard', 'orders', 'transport', 'paynow'];
+  } else {
+    // admin
+    primaryKeys = ['dashboard', 'orders', 'transport', 'analytics'];
+  }
+
+  const allowedPages = typeof getRoleAllowedPages === 'function' ? getRoleAllowedPages() : Object.keys(ALL_NAV_ITEMS);
+
+  let html = '';
+  primaryKeys.forEach(key => {
+    if (allowedPages.includes(key)) {
+      const item = ALL_NAV_ITEMS[key];
+      const isActive = (typeof currentPage !== 'undefined' && currentPage === key);
+      html += `
+        <div class="bottom-nav-item ${isActive ? 'active' : ''}" onclick="navigate('${key}'); renderBottomNav('${role}');">
+          <i class="fas ${item.icon}"></i>
+          <span>${item.label}</span>
+        </div>`;
+    }
+  });
+
+  // More button
+  html += `
+    <div class="bottom-nav-item" onclick="toggleMobileMoreDrawer(true)">
+      <i class="fas fa-ellipsis"></i>
+      <span>More</span>
+    </div>`;
+
+  container.innerHTML = html;
+
+  // Render More Drawer Grid
+  const moreGrid = document.getElementById('mobile-more-grid');
+  if (moreGrid) {
+    const moreKeys = allowedPages.filter(p => !primaryKeys.includes(p));
+    moreGrid.innerHTML = moreKeys.map(key => {
+      const item = ALL_NAV_ITEMS[key];
+      if (!item) return '';
+      return `
+        <div class="mobile-more-item" onclick="toggleMobileMoreDrawer(false); navigate('${key}'); renderBottomNav('${role}');">
+          <div class="mobile-more-icon"><i class="fas ${item.icon}"></i></div>
+          <span>${item.label}</span>
+        </div>`;
+    }).join('');
+  }
+}
+
+function toggleMobileMoreDrawer(show) {
+  const drawer = document.getElementById('mobile-more-drawer');
+  if (!drawer) return;
+  if (show === undefined) {
+    drawer.classList.toggle('open');
+  } else if (show) {
+    drawer.classList.add('open');
+  } else {
+    drawer.classList.remove('open');
+  }
+}
+
 
 function formatCurrency(amount) { return 'LKR '+Number(amount||0).toLocaleString('en-LK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function formatDate(d) { if(!d)return'—'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }

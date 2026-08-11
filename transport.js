@@ -39,6 +39,13 @@ const TransportModule = {
           <!-- Dynamic Stats Cards -->
         </div>
 
+        <!-- Driver Mobile FAB -->
+        ${canEditTransport() ? `
+          <button onclick="TransportModule.openStartTripModal()" class="driver-fab" title="Start New Trip">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        ` : ''}
+
         <!-- Main Content Table Container -->
         <div id="transport-main-container"></div>
       </div>
@@ -109,6 +116,8 @@ const TransportModule = {
     }
 
     let rowsHTML = '';
+    let mobileCardsHTML = '';
+
     if (trips.length === 0) {
       rowsHTML = `
         <tr>
@@ -117,6 +126,7 @@ const TransportModule = {
           </td>
         </tr>
       `;
+      mobileCardsHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);">No vehicle trips recorded yet</div>`;
     } else {
       trips.forEach(t => {
         const isCompleted = t.status === 'Completed';
@@ -204,6 +214,35 @@ const TransportModule = {
             </td>
           </tr>
         `;
+
+        // Mobile Card List Render
+        const statusBadgeStyle = isCompleted ? 'badge-green' : 'badge-yellow';
+        mobileCardsHTML += `
+          <div class="mobile-card" style="${!isCompleted ? 'border:2px solid var(--warning);' : ''}">
+            <div class="mobile-card-top">
+              <div class="mobile-card-title">${t.trip_id} — ${t.driver_name || 'Driver'}</div>
+              <span class="badge ${statusBadgeStyle}">${t.status}</span>
+            </div>
+            <div class="mobile-card-grid">
+              <div class="mobile-card-kv"><span class="mobile-card-label">Start Time</span><span class="mobile-card-value">${t.start_date} ${t.start_time || ''}</span></div>
+              <div class="mobile-card-kv"><span class="mobile-card-label">Start KM</span><span class="mobile-card-value">${t.starting_km} KM</span></div>
+              <div class="mobile-card-kv"><span class="mobile-card-label">End KM</span><span class="mobile-card-value">${isCompleted ? t.final_km + ' KM' : 'Active'}</span></div>
+              <div class="mobile-card-kv"><span class="mobile-card-label">Distance</span><span class="mobile-card-value">${isCompleted ? (t.distance_km || 0) + ' KM' : 'In Progress'}</span></div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <span class="mobile-card-label">Customer Sequence:</span>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">${customersHTML}</div>
+            </div>
+            <div class="mobile-card-actions">
+              ${!isCompleted && canEditTransport() ? `
+                <button onclick="TransportModule.openCustomerSelectionModal('${t.id}')" class="btn btn-secondary btn-sm"><i class="fa-solid fa-list-check"></i> Customers</button>
+                <button onclick="TransportModule.openEndTripModal('${t.id}')" class="btn btn-success btn-sm" style="font-weight:700;min-height:52px;"><i class="fa-solid fa-flag-checkered"></i> End Trip & Enter KM</button>
+              ` : `
+                <button onclick="TransportModule.viewTripDetails('${t.id}')" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye"></i> Details</button>
+              `}
+            </div>
+          </div>
+        `;
       });
     }
 
@@ -218,7 +257,7 @@ const TransportModule = {
           </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="table-wrap overflow-x-auto">
           <table class="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
@@ -235,6 +274,9 @@ const TransportModule = {
               ${rowsHTML}
             </tbody>
           </table>
+        </div>
+        <div class="mobile-card-list p-3" style="display:none;">
+          ${mobileCardsHTML}
         </div>
       </div>
     `;

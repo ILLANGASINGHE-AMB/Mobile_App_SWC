@@ -56,6 +56,9 @@ function updateRoleChip() {
     avatar.title       = `${currentUser.display_name} (${roleText})`;
   }
   applyRoleSidebarRestrictions();
+  if (typeof renderBottomNav === 'function' && currentUser) {
+    renderBottomNav(currentUser.role);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -225,6 +228,9 @@ function navigate(page) {
     'recent-actions': renderRecentActions
   };
   if (pages[page]) pages[page]();
+  if (typeof renderBottomNav === 'function' && currentUser) {
+    renderBottomNav(currentUser.role);
+  }
 }
 
 function renderExpensesPage() {
@@ -466,6 +472,7 @@ async function renderCustomers() {
           <tbody id="cust-table-body"></tbody>
         </table>
       </div>
+      <div id="cust-mobile-cards" class="mobile-card-list" style="padding:12px;"></div>
       <div id="cust-pagination" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);"></div>
     </div>`;
   await _refreshCustomersTable();
@@ -481,6 +488,8 @@ async function _refreshCustomersTable() {
   const {items,totalPages,total} = paginateData(filtered, custPage, custPerPage);
   const countEl = document.getElementById('cust-count');
   if(countEl) countEl.textContent = total+' customer'+(total!==1?'s':'');
+
+  // Render Table Rows
   tbody.innerHTML = items.length===0
     ? `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">No customers</td></tr>`
     : items.map(c => `<tr>
@@ -497,6 +506,32 @@ async function _refreshCustomersTable() {
           ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomerConfirm(${c.id})"><i class="fas fa-trash"></i></button>` : ''}
         </div></td>
       </tr>`).join('');
+
+  // Render Mobile Cards
+  const mobileCardsEl = document.getElementById('cust-mobile-cards');
+  if (mobileCardsEl) {
+    mobileCardsEl.innerHTML = items.length === 0
+      ? `<div style="text-align:center;padding:24px;color:var(--text-muted);">No customers found</div>`
+      : items.map(c => `
+        <div class="mobile-card">
+          <div class="mobile-card-top">
+            <div class="mobile-card-title">${c.hotel_name}</div>
+            <span class="badge badge-purple">Hotel</span>
+          </div>
+          <div class="mobile-card-grid">
+            <div class="mobile-card-kv"><span class="mobile-card-label">Contact</span><span class="mobile-card-value">${c.contact_person||'—'}</span></div>
+            <div class="mobile-card-kv"><span class="mobile-card-label">Phone</span><span class="mobile-card-value">${c.phone||'—'}</span></div>
+            <div class="mobile-card-kv"><span class="mobile-card-label">Email</span><span class="mobile-card-value">${c.email||'—'}</span></div>
+            <div class="mobile-card-kv"><span class="mobile-card-label">Joined</span><span class="mobile-card-value">${formatDate(c.created_date)}</span></div>
+          </div>
+          <div class="mobile-card-actions">
+            <button class="btn btn-sm" onclick="showCustomerProfileModal(${c.id})" style="background:#8b5cf6; border-color:#7c3aed; color:#fff;"><i class="fas fa-tags"></i> Profile</button>
+            <button class="btn btn-primary btn-sm" onclick="showEditCustomerModal(${c.id})"><i class="fas fa-edit"></i> Edit</button>
+            <button class="btn btn-secondary btn-sm" onclick="viewCustomerOrders(${c.id})"><i class="fas fa-boxes-stacked"></i> Orders</button>
+            ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomerConfirm(${c.id})"><i class="fas fa-trash"></i></button>` : ''}
+          </div>
+        </div>`).join('');
+  }
   const pg=document.getElementById('cust-pagination');
   if(pg) pg.innerHTML=`<span style="font-size:0.82em;color:var(--text-muted);">Page ${custPage} of ${totalPages}</span>`+renderPagination(custPage,totalPages,'changeCustPage');
 }
@@ -1065,6 +1100,7 @@ async function renderPayNow() {
           <tbody id="paynow-table-body"></tbody>
         </table>
       </div>
+      <div id="paynow-mobile-cards" class="mobile-card-list" style="padding:12px;"></div>
       <div id="paynow-pagination" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);"></div>
     </div>`;
 
@@ -1152,6 +1188,35 @@ async function _refreshPayNowTable() {
           </td>
         </tr>`;
       }).join('');
+
+  // Render Mobile Cards
+  const mobileCardsEl = document.getElementById('paynow-mobile-cards');
+  if (mobileCardsEl) {
+    mobileCardsEl.innerHTML = items.length === 0
+      ? `<div style="text-align:center;padding:24px;color:var(--text-muted);">No pending payments found</div>`
+      : items.map(o => {
+          const inv = invMap[o.id];
+          const invNum = inv?.invoice_number || '—';
+          const balance = inv ? inv.balance : Math.max(0, (o.total_amount || 0) - (o.advance_payment || 0));
+          return `
+            <div class="mobile-card">
+              <div class="mobile-card-top">
+                <div class="mobile-card-title">${o.batch_id || '—'}</div>
+                ${statusBadge(o.status)}
+              </div>
+              <div class="mobile-card-grid">
+                <div class="mobile-card-kv"><span class="mobile-card-label">Customer</span><span class="mobile-card-value">${getOrderCustomerName(o, cMap)}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Invoice #</span><span class="mobile-card-value">${invNum}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Pickup Date</span><span class="mobile-card-value">${formatDate(o.pickup_date)}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Balance</span><span class="mobile-card-value" style="color:var(--danger);">${formatCurrency(balance)}</span></div>
+              </div>
+              <div class="mobile-card-actions">
+                ${canEditPayNow() ? `<button class="btn btn-success btn-sm" onclick="showPayNowOptionsModal(${o.id})" style="background:#22c55e;border-color:#16a34a;font-weight:700;"><i class="fas fa-money-bill-wave"></i> Pay Now</button>` : ''}
+                <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails(${o.id})"><i class="fas fa-eye"></i> View</button>
+              </div>
+            </div>`;
+        }).join('');
+  }
 
   // Update pagination UI
   const pg = document.getElementById('paynow-pagination');

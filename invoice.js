@@ -134,6 +134,7 @@ async function renderInvoices() {
           <tbody id="inv-table-body"></tbody>
         </table>
       </div>
+      <div id="inv-mobile-cards" class="mobile-card-list" style="padding:12px;"></div>
       <div id="inv-pagination" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);background:var(--card-bg);"></div>
     </div>`;
 
@@ -416,6 +417,41 @@ async function _refreshInvoicesTable() {
             </td>
           </tr>`;
       }).join('');
+
+  // Render Mobile Cards
+  const mobileCardsEl = document.getElementById('inv-mobile-cards');
+  if (mobileCardsEl) {
+    mobileCardsEl.innerHTML = items.length === 0
+      ? `<div style="text-align:center;padding:24px;color:var(--text-muted);">No invoices found</div>`
+      : items.map(inv => {
+          const o = oMap[inv.order_id];
+          const isCredit = inv.invoice_type === 'Credit';
+          const overdue = isCredit && inv.credit_due_date && new Date(inv.credit_due_date) < new Date() && inv.computedBalance > 0;
+          const paidBadge = inv.computedStatus === 'Paid' 
+            ? '<span class="badge badge-green">Paid</span>' 
+            : '<span class="badge badge-red">Unpaid</span>';
+          const balanceColor = inv.computedBalance === 0 ? 'var(--success)' : 'var(--danger)';
+
+          return `
+            <div class="mobile-card">
+              <div class="mobile-card-top">
+                <div class="mobile-card-title">${inv.invoice_number}</div>
+                ${paidBadge}
+              </div>
+              <div class="mobile-card-grid">
+                <div class="mobile-card-kv"><span class="mobile-card-label">Customer</span><span class="mobile-card-value">${o ? getOrderCustomerName(o, cMap) : '—'}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Batch ID</span><span class="mobile-card-value">${o?.batch_id || '—'}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Total</span><span class="mobile-card-value">${formatCurrency(inv.total_amount)}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Balance</span><span class="mobile-card-value" style="color:${balanceColor};">${formatCurrency(inv.computedBalance)}</span></div>
+              </div>
+              <div class="mobile-card-actions">
+                <button class="btn btn-primary btn-sm" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i> View</button>
+                <button class="btn btn-secondary btn-sm" onclick="printInvoice(${inv.id})"><i class="fas fa-print"></i> Print</button>
+                ${isAdmin() ? `<button class="btn btn-danger btn-sm" onclick="deleteInvoiceConfirm(${inv.id})"><i class="fas fa-trash"></i></button>` : ''}
+              </div>
+            </div>`;
+        }).join('');
+  }
 
   const pg = document.getElementById('inv-pagination');
   if (pg) pg.innerHTML = `<span style="font-size:0.82em;color:var(--text-muted);font-weight:600;">Page ${invoicePage} of ${totalPages}</span>` + renderPagination(invoicePage, totalPages, 'changeInvoicePage');
@@ -1439,7 +1475,7 @@ async function renderDeductions() {
 
     <!-- Table Container -->
     <div class="card" style="padding:0;overflow:hidden;">
-      <div style="overflow-x:auto;">
+      <div class="table-wrap" style="overflow-x:auto;">
         <table class="table" style="width:100%;border-collapse:collapse;margin:0;">
           <thead>
             <tr>
@@ -1458,6 +1494,7 @@ async function renderDeductions() {
           </tbody>
         </table>
       </div>
+      <div id="deductions-mobile-cards" class="mobile-card-list" style="padding:12px;"></div>
     </div>
   `;
 
@@ -1482,6 +1519,8 @@ async function _refreshDeductionsTable() {
 
     if (!deductions || deductions.length === 0) {
       tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted);">No deductions found</td></tr>`;
+      const mobileCardsEl = document.getElementById('deductions-mobile-cards');
+      if (mobileCardsEl) mobileCardsEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);">No deductions found</div>`;
       document.getElementById('deduct-card-count').textContent = '0';
       document.getElementById('deduct-card-total').textContent = 'LKR 0.00';
       return;
@@ -1514,6 +1553,33 @@ async function _refreshDeductionsTable() {
         </tr>
       `;
     }).join('');
+
+    // Render Mobile Cards
+    const mobileCardsEl = document.getElementById('deductions-mobile-cards');
+    if (mobileCardsEl) {
+      mobileCardsEl.innerHTML = deductions.map(d => {
+        const inv = invMap[d.invoice_id];
+        const order = inv ? oMap[inv.order_id] : null;
+        const customerName = order ? getOrderCustomerName(order, cMap) : '—';
+        return `
+          <div class="mobile-card">
+            <div class="mobile-card-top">
+              <div class="mobile-card-title">${d.invoice_number || '—'}</div>
+              <span class="badge badge-red">Deduction</span>
+            </div>
+            <div class="mobile-card-grid">
+              <div class="mobile-card-kv"><span class="mobile-card-label">Customer</span><span class="mobile-card-value">${customerName}</span></div>
+              <div class="mobile-card-kv"><span class="mobile-card-label">Date</span><span class="mobile-card-value">${formatDate(d.created_at)}</span></div>
+              <div class="mobile-card-kv"><span class="mobile-card-label">Original Total</span><span class="mobile-card-value">${formatCurrency(d.original_amount)}</span></div>
+              <div class="mobile-card-kv"><span class="mobile-card-label">Deducted</span><span class="mobile-card-value" style="color:var(--danger);">${formatCurrency(d.deduction_amount)}</span></div>
+            </div>
+            <div style="font-size:0.82em;color:var(--text-muted);margin:6px 0;">Reason: ${d.reason || 'N/A'}</div>
+            <div class="mobile-card-actions">
+              ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteDeductionConfirm(${d.id}, ${d.invoice_id}, ${d.deduction_amount})"><i class="fas fa-trash"></i> Delete</button>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
 
   } catch (err) {
     toast('Error loading deductions: ' + (err.message || err), 'error');

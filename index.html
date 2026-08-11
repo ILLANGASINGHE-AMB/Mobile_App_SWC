@@ -2,7 +2,13 @@
 <html lang="en" class="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SAGA WC">
+  <meta name="theme-color" content="#0f2d5c">
+  <link rel="manifest" href="manifest.json">
   <title>Sagacious Washing Center</title>
   <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -51,6 +57,7 @@
       min-height: 100vh;
       font-size: 15px;
       transition: background 0.3s, color 0.3s;
+      -webkit-tap-highlight-color: transparent;
     }
     body.text-sm-ui { font-size: 13px; }
     body.text-md-ui { font-size: 15px; }
@@ -402,12 +409,283 @@
     .invoice-header { display: flex; justify-content: space-between; margin-bottom: 30px; }
     .paid-stamp { position: absolute; top: 50px; right: 50px; border: 4px solid green; color: green; font-size: 3em; font-weight: 900; transform: rotate(-20deg); padding: 8px 18px; border-radius: 8px; opacity: 0.5; text-transform: uppercase; }
 
-    /* Responsive */
+    /* ── Bottom Navigation Bar (Mobile) ── */
+    #mobile-bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      z-index: 1000;
+      align-items: center;
+      justify-content: space-around;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.72em;
+      font-weight: 600;
+      flex: 1;
+      height: 100%;
+      transition: color 0.2s;
+      cursor: pointer;
+    }
+    .bottom-nav-item i { font-size: 1.25em; }
+    .bottom-nav-item.active { color: var(--primary); }
+
+    /* Mobile More Drawer */
+    #mobile-more-drawer {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1050;
+      align-items: flex-end;
+    }
+    #mobile-more-drawer.open { display: flex; }
+    .mobile-more-content {
+      background: var(--card-bg);
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 20px 16px 30px;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+      animation: slideUpModal 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .mobile-more-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mobile-more-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px 10px;
+    }
+    .mobile-more-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 0.78em;
+      font-weight: 500;
+      text-align: center;
+      cursor: pointer;
+    }
+    .mobile-more-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--bg);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Mobile Card View Components ── */
+    .mobile-card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mobile-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .mobile-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mobile-card-title {
+      font-weight: 700;
+      font-size: 0.95em;
+      color: var(--text);
+    }
+    .mobile-card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      margin-bottom: 10px;
+    }
+    .mobile-card-kv {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .mobile-card-label {
+      font-size: 0.72em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 600;
+    }
+    .mobile-card-value {
+      font-size: 0.88em;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .mobile-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .mobile-card-actions .btn {
+      flex: 1;
+      justify-content: center;
+      min-height: 44px;
+    }
+
+    /* Stepper Widget for Mobile Quantities */
+    .stepper-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stepper-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1.2em;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .stepper-btn:active { background: var(--border); }
+    .stepper-input {
+      width: 60px;
+      height: 44px;
+      text-align: center;
+      font-size: 1em;
+      font-weight: 700;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* Driver FAB & Mobile Trip Card */
+    .driver-fab {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1a4d8f, #00b4d8);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3em;
+      box-shadow: 0 6px 20px rgba(26, 77, 143, 0.45);
+      z-index: 990;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* Sticky Bottom Modal Footer */
+    .modal-sticky-footer {
+      position: sticky;
+      bottom: 0;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      padding: 12px 0 0;
+      margin-top: 12px;
+      z-index: 10;
+    }
+
+    /* Responsive Breakpoints */
     @media (max-width: 768px) {
-      #sidebar { width: 64px; }
-      #sidebar .sidebar-logo .logo-text, #sidebar nav a span, #sidebar .sidebar-footer button span { display: none; }
-      #main { margin-left: 64px; }
-      #content { padding: 14px; }
+      #sidebar { display: none !important; }
+      #main { margin-left: 0 !important; }
+      #topbar { height: 52px; padding: 0 14px; }
+      #topbar h1 { font-size: 1.1em; }
+      #content { padding: 12px; padding-bottom: 74px !important; }
+      #mobile-bottom-nav { display: flex; }
+      .gemini-fab { bottom: 80px !important; }
+      .gemini-drawer { width: 100%; right: -100%; }
+
+      /* Modals convert to Bottom Sheets */
+      .modal-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+      }
+      .modal {
+        border-radius: 20px 20px 0 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 92vh !important;
+        padding: 20px 16px !important;
+        animation: slideUpModal 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+      }
+      .modal-lg, .modal-xl {
+        max-height: 95vh !important;
+      }
+      @keyframes slideUpModal {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      .modal-drag-handle {
+        width: 38px;
+        height: 5px;
+        background: var(--border);
+        border-radius: 3px;
+        margin: 0 auto 14px auto;
+      }
+
+      /* Touch Optimizations */
+      .form-input { padding: 12px 14px !important; font-size: 16px !important; min-height: 44px; }
+      .form-select { font-size: 16px !important; min-height: 44px; }
+      .btn { min-height: 44px; padding: 10px 16px; font-size: 0.9em; }
+      .btn-sm { min-height: 44px; font-size: 0.88em; padding: 8px 14px; }
+      .grid-cols-2-mobile-stack { grid-template-columns: 1fr !important; }
+
+      .stat-card { padding: 14px 12px; }
+      .stat-card .value { font-size: 1.5em; }
+      .card { padding: 14px 12px; }
+      .chart-container { height: 220px !important; }
+      .table-wrap { display: none !important; }
+      .mobile-card-list { display: flex !important; }
+      .login-card { width: 92% !important; padding: 32px 20px !important; }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-card-list { display: none !important; }
+      .table-wrap { display: block !important; }
     }
 
     /* Dark mode overrides */
@@ -810,6 +1088,21 @@
 
     <div id="gemini-fab" class="gemini-fab" onclick="toggleGeminiDrawer()" title="Ask Gemini AI">
       <i class="fas fa-wand-magic-sparkles"></i>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <div id="mobile-bottom-nav"></div>
+
+    <!-- Mobile More Drawer Modal -->
+    <div id="mobile-more-drawer" onclick="toggleMobileMoreDrawer(false)">
+      <div class="mobile-more-content" onclick="event.stopPropagation()">
+        <div class="modal-drag-handle"></div>
+        <div class="mobile-more-header">
+          <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.15em;">All Features</span>
+          <button class="modal-close" onclick="toggleMobileMoreDrawer(false)"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="mobile-more-grid" id="mobile-more-grid"></div>
+      </div>
     </div>
   </div>
 

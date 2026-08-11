@@ -69,6 +69,7 @@ async function renderOrders() {
           <tbody id="orders-table-body"></tbody>
         </table>
       </div>
+      <div id="orders-mobile-cards" class="mobile-card-list" style="padding:12px;"></div>
       <div id="orders-pagination" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);"></div>
     </div>`;
 
@@ -147,6 +148,35 @@ async function _refreshOrdersTable() {
           </td>
         </tr>`;
       }).join('');
+
+  // Update Mobile Cards
+  const mobileCardsEl = document.getElementById('orders-mobile-cards');
+  if (mobileCardsEl) {
+    mobileCardsEl.innerHTML = items.length === 0
+      ? `<div style="text-align:center;padding:24px;color:var(--text-muted);">No orders found</div>`
+      : items.map(o => {
+          const custName = getOrderCustomerName(o, cMap);
+          return `
+            <div class="mobile-card">
+              <div class="mobile-card-top">
+                <div class="mobile-card-title">${o.batch_id || '—'}</div>
+                ${statusBadge(o.status)}
+              </div>
+              <div class="mobile-card-grid">
+                <div class="mobile-card-kv"><span class="mobile-card-label">Customer</span><span class="mobile-card-value">${custName}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Pickup Date</span><span class="mobile-card-value">${formatDate(o.pickup_date)}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Total</span><span class="mobile-card-value">${formatCurrency(o.total_amount)}</span></div>
+                <div class="mobile-card-kv"><span class="mobile-card-label">Advance</span><span class="mobile-card-value">${formatCurrency(o.advance_payment)}</span></div>
+              </div>
+              <div class="mobile-card-actions">
+                <button class="btn btn-secondary btn-sm" onclick="viewOrderDetails(${o.id})"><i class="fas fa-eye"></i> View</button>
+                ${canEditOrders() ? `<button class="btn btn-primary btn-sm" onclick="showEditOrderModal(${o.id})"><i class="fas fa-edit"></i> Edit</button>` : ''}
+                <button class="btn btn-success btn-sm" onclick="printInvoiceByOrder(${o.id})" style="background:#10b981;border-color:#10b981;color:#fff;"><i class="fas fa-print"></i> Print</button>
+                ${isAdmin() ? `<button class="btn btn-danger btn-sm" onclick="deleteOrderConfirm(${o.id})"><i class="fas fa-trash"></i> Delete</button>` : ''}
+              </div>
+            </div>`;
+        }).join('');
+  }
 
   // Update pagination
   const paginationEl = document.getElementById('orders-pagination');
