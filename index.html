@@ -423,7 +423,7 @@
       height: 64px;
       background: var(--card-bg);
       border-top: 1px solid var(--border);
-      z-index: 1000;
+      z-index: 9990;
       align-items: center;
       justify-content: space-around;
       box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
@@ -443,6 +443,8 @@
       height: 100%;
       transition: color 0.2s;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
     .bottom-nav-item i { font-size: 1.25em; }
     .bottom-nav-item.active { color: var(--primary); }
@@ -453,7 +455,7 @@
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.5);
-      z-index: 1050;
+      z-index: 10000;
       align-items: flex-end;
     }
     #mobile-more-drawer.open { display: flex; }

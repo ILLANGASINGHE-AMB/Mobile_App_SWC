@@ -170,7 +170,10 @@ const ALL_NAV_ITEMS = {
   settings:       { label: 'Settings',  icon: 'fa-cog' }
 };
 
-function renderBottomNav(role = 'admin') {
+function renderBottomNav(role) {
+  if (!role && typeof currentUser !== 'undefined' && currentUser) role = currentUser.role;
+  if (!role) role = 'admin';
+
   const container = document.getElementById('mobile-bottom-nav');
   if (!container) return;
 
@@ -190,9 +193,10 @@ function renderBottomNav(role = 'admin') {
   primaryKeys.forEach(key => {
     if (allowedPages.includes(key)) {
       const item = ALL_NAV_ITEMS[key];
+      if (!item) return;
       const isActive = (typeof currentPage !== 'undefined' && currentPage === key);
       html += `
-        <div class="bottom-nav-item ${isActive ? 'active' : ''}" onclick="navigate('${key}'); renderBottomNav('${role}');">
+        <div class="bottom-nav-item ${isActive ? 'active' : ''}" onclick="navigate('${key}')">
           <i class="fas ${item.icon}"></i>
           <span>${item.label}</span>
         </div>`;
@@ -200,23 +204,26 @@ function renderBottomNav(role = 'admin') {
   });
 
   // More button
-  html += `
-    <div class="bottom-nav-item" onclick="toggleMobileMoreDrawer(true)">
-      <i class="fas fa-ellipsis"></i>
-      <span>More</span>
-    </div>`;
+  const moreKeys = allowedPages.filter(p => !primaryKeys.includes(p));
+  if (moreKeys.length > 0) {
+    html += `
+      <div class="bottom-nav-item" onclick="toggleMobileMoreDrawer(true)">
+        <i class="fas fa-ellipsis"></i>
+        <span>More</span>
+      </div>`;
+  }
 
   container.innerHTML = html;
 
   // Render More Drawer Grid
   const moreGrid = document.getElementById('mobile-more-grid');
   if (moreGrid) {
-    const moreKeys = allowedPages.filter(p => !primaryKeys.includes(p));
     moreGrid.innerHTML = moreKeys.map(key => {
       const item = ALL_NAV_ITEMS[key];
       if (!item) return '';
+      const isActive = (typeof currentPage !== 'undefined' && currentPage === key);
       return `
-        <div class="mobile-more-item" onclick="toggleMobileMoreDrawer(false); navigate('${key}'); renderBottomNav('${role}');">
+        <div class="mobile-more-item ${isActive ? 'active' : ''}" onclick="toggleMobileMoreDrawer(false); navigate('${key}')">
           <div class="mobile-more-icon"><i class="fas ${item.icon}"></i></div>
           <span>${item.label}</span>
         </div>`;

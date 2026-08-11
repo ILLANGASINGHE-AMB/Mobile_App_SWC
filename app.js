@@ -231,8 +231,8 @@ function navigate(page) {
     'recent-actions': renderRecentActions
   };
   if (pages[page]) pages[page]();
-  if (typeof renderBottomNav === 'function' && currentUser) {
-    renderBottomNav(currentUser.role);
+  if (typeof renderBottomNav === 'function') {
+    renderBottomNav(currentUser ? currentUser.role : 'admin');
   }
 }
 
