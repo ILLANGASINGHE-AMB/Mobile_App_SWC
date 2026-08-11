@@ -628,8 +628,20 @@
       z-index: 10;
     }
 
+    .dash-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
     /* Responsive Breakpoints */
     @media (max-width: 768px) {
+      .dash-stat-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        margin-bottom: 16px !important;
+      }
       #sidebar { display: none !important; }
       #main { margin-left: 0 !important; }
       #topbar { height: 52px; padding: 0 14px; }
@@ -671,11 +683,13 @@
       .form-input { padding: 12px 14px !important; font-size: 16px !important; min-height: 44px; }
       .form-select { font-size: 16px !important; min-height: 44px; }
       .btn { min-height: 44px; padding: 10px 16px; font-size: 0.9em; }
-      .btn-sm { min-height: 44px; font-size: 0.88em; padding: 8px 14px; }
+      .btn-sm { min-height: 36px; font-size: 0.84em; padding: 6px 12px; }
       .grid-cols-2-mobile-stack { grid-template-columns: 1fr !important; }
 
-      .stat-card { padding: 14px 12px; }
-      .stat-card .value { font-size: 1.5em; }
+      .stat-card { padding: 12px 10px; }
+      .stat-card .label { font-size: 0.72em; }
+      .stat-card .value { font-size: 1.35em; }
+      .stat-card .sub { font-size: 0.75em; }
       .card { padding: 14px 12px; }
       .chart-container { height: 220px !important; }
       .table-wrap { display: none !important; }

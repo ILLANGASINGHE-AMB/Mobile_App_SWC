@@ -268,37 +268,47 @@ async function renderDashboard() {
   const totalIncome     = orders.reduce((s, o) => s + (o.total_amount || 0), 0);
 
   document.getElementById('content').innerHTML = `
-    <div style="margin-bottom:22px;">
+    <div style="margin-bottom:20px;">
       <div style="font-size:0.85em;color:var(--text-muted);">Good ${getGreeting()}, <strong>${currentUser?.display_name || 'User'}</strong></div>
-      <div style="font-family:'Playfair Display',serif;font-size:1.6em;font-weight:700;color:var(--text);">Welcome to Sagacious Washing Center</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.5em;font-weight:700;color:var(--text);">Welcome to Sagacious Washing Center</div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:16px;margin-bottom:24px;">
+
+    <!-- Line 1: Stat Cards Grid (2x2 on mobile) -->
+    <div class="dash-stat-grid">
       ${statCard("Today's Pickups",   todayPickups,                    "fa-truck",          "#3b82f6", "#dbeafe", "Scheduled for today")}
       ${statCard("Pending Payments",  pendingPayments,                 "fa-clock",          "#f59e0b", "#fef9c3", "Awaiting payment")}
       ${statCard("Monthly Income",    formatCurrency(monthlyGain),     "fa-coins",          "#8b5cf6", "#f3e8ff", "All bills this month")}
       ${statCard("Total Income",      formatCurrency(totalIncome),     "fa-money-bill-wave","#06b6d4", "#cffafe", "All bill types")}
     </div>
-    <div style="display:grid;grid-template-columns:3fr 2fr;gap:20px;margin-bottom:24px;">
-      <div class="card">
-        <div style="font-weight:700;margin-bottom:14px;font-family:'Playfair Display',serif;">Daily Orders by Status (Last 14 Days)</div>
-        <div class="chart-container"><canvas id="revenue-chart"></canvas></div>
-      </div>
-      <div class="card">
-        <div style="font-weight:700;margin-bottom:14px;font-family:'Playfair Display',serif;">Order Status Distribution</div>
-        <div class="chart-container"><canvas id="status-chart"></canvas></div>
-      </div>
+
+    <!-- Line 2: Daily Orders by Status (graph) -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="font-weight:700;margin-bottom:14px;font-family:'Playfair Display',serif;font-size:1.1em;">Daily Orders by Status (Last 14 Days)</div>
+      <div class="chart-container"><canvas id="revenue-chart"></canvas></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <div class="card">
-        <div style="font-weight:700;margin-bottom:14px;font-family:'Playfair Display',serif;"><i class="fas fa-boxes-stacked" style="color:var(--primary);margin-right:8px;"></i>Recent Orders</div>
-        <div id="recent-orders-table"></div>
-        <button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="navigate('orders')">View All <i class="fas fa-arrow-right"></i></button>
+
+    <!-- Line 3: Order Status Distribution (pie chart) -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="font-weight:700;margin-bottom:14px;font-family:'Playfair Display',serif;font-size:1.1em;">Order Status Distribution</div>
+      <div class="chart-container" style="display:flex;justify-content:center;align-items:center;"><canvas id="status-chart"></canvas></div>
+    </div>
+
+    <!-- Line 4: Recent Orders -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-weight:700;font-family:'Playfair Display',serif;font-size:1.1em;"><i class="fas fa-boxes-stacked" style="color:var(--primary);margin-right:8px;"></i>Recent Orders</div>
+        <button class="btn btn-secondary btn-sm" onclick="navigate('orders')">View All <i class="fas fa-arrow-right"></i></button>
       </div>
-      <div class="card">
-        <div style="font-weight:700;margin-bottom:14px;font-family:'Playfair Display',serif;"><i class="fas fa-file-invoice" style="color:var(--primary);margin-right:8px;"></i>Unpaid Invoices</div>
-        <div id="unpaid-invoices-table"></div>
-        <button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="navigate('invoices')">View All <i class="fas fa-arrow-right"></i></button>
+      <div id="recent-orders-table"></div>
+    </div>
+
+    <!-- Line 5: Unpaid Invoices -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-weight:700;font-family:'Playfair Display',serif;font-size:1.1em;"><i class="fas fa-file-invoice" style="color:var(--primary);margin-right:8px;"></i>Unpaid Invoices</div>
+        <button class="btn btn-secondary btn-sm" onclick="navigate('invoices')">View All <i class="fas fa-arrow-right"></i></button>
       </div>
+      <div id="unpaid-invoices-table"></div>
     </div>`;
 
   await renderDashCharts(orders, payments);
@@ -310,11 +320,11 @@ function statCard(label, value, icon, color, bgColor, sub) {
   return `<div class="stat-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div class="label">${label}</div>
-      <div style="background:${bgColor};color:${color};width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+      <div style="background:${bgColor};color:${color};width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
         <i class="fas ${icon}"></i>
       </div>
     </div>
-    <div class="value">${value}</div>
+    <div class="value" style="word-break:break-word;">${value}</div>
     <div class="sub">${sub}</div>
   </div>`;
 }
@@ -341,10 +351,9 @@ async function renderDashCharts(orders, payments) {
   const isDark = document.documentElement.classList.contains('dark');
   const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
   const textColor = isDark ? '#94a3b8' : '#64748b';
+  const isMobile = typeof isMobileView === 'function' ? isMobileView() : window.innerWidth <= 768;
 
   // ── Daily Orders by Status (last 14 days) ──
-  // Counts EVERY order type per day (not just paid/revenue) so pickup requests,
-  // credit bills, etc. all show up. One stacked bar segment per status.
   const datasets = ORDER_STATUSES.map(status => ({
     label: status,
     data: days.map(d => orders.filter(o => o.status === status && (o.created_at || '').startsWith(d)).length),
@@ -377,7 +386,7 @@ async function renderDashCharts(orders, payments) {
     });
   }
 
-  // ── Order Status Distribution (doughnut) — same colours as the bar chart ──
+  // ── Order Status Distribution (doughnut) ──
   const statusCounts = {};
   orders.forEach(o => { statusCounts[o.status] = (statusCounts[o.status] || 0) + 1; });
   const statusLabels = Object.keys(statusCounts);
@@ -386,7 +395,16 @@ async function renderDashCharts(orders, payments) {
     dashCharts.status = new Chart(sCtx, {
       type: 'doughnut',
       data: { labels: statusLabels, datasets: [{ data: Object.values(statusCounts), backgroundColor: statusLabels.map(statusChartColor), borderWidth: 2, borderColor: isDark ? '#1e293b' : '#fff' }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: textColor, font: { size: 11 }, boxWidth: 12 } } } }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: isMobile ? 'bottom' : 'right',
+            labels: { color: textColor, font: { size: isMobile ? 10 : 11 }, boxWidth: 12, padding: 8 }
+          }
+        }
+      }
     });
   }
 }
@@ -395,7 +413,10 @@ async function renderRecentOrders(orders) {
   const customers = await DB.getCustomers();
   const cMap = Object.fromEntries(customers.map(c => [c.id, c]));
   const recent = orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
-  document.getElementById('recent-orders-table').innerHTML = `
+  const container = document.getElementById('recent-orders-table');
+  if (!container) return;
+
+  container.innerHTML = `
     <div class="table-wrap">
       <table>
         <thead><tr><th>Batch ID</th><th>Customer</th><th>Status</th><th>Total</th></tr></thead>
@@ -408,6 +429,20 @@ async function renderRecentOrders(orders) {
           </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">No orders yet</td></tr>`}
         </tbody>
       </table>
+    </div>
+    <div class="mobile-card-list" style="padding:2px 0 0 0;">
+      ${recent.map(o => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border-radius:10px;margin-bottom:8px;border:1px solid var(--border);">
+          <div>
+            <div style="font-family:monospace;font-weight:700;font-size:0.9em;color:var(--primary);">${o.batch_id}</div>
+            <div style="font-size:0.82em;color:var(--text);font-weight:600;margin-top:2px;">${getOrderCustomerName(o, cMap)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700;font-size:0.88em;">${formatCurrency(o.total_amount)}</div>
+            <div style="margin-top:2px;">${statusBadge(o.status)}</div>
+          </div>
+        </div>
+      `).join('') || `<div style="text-align:center;color:var(--text-muted);padding:14px;">No orders yet</div>`}
     </div>`;
 }
 
@@ -416,13 +451,16 @@ async function renderUnpaidInvoices(invoices) {
   const oMap = Object.fromEntries(orders.map(o => [o.id, o]));
   const cMap = Object.fromEntries(customers.map(c => [c.id, c]));
   const unpaid = invoices.filter(i => i.paid_status !== 'Paid').slice(0, 5);
-  document.getElementById('unpaid-invoices-table').innerHTML = `
+  const container = document.getElementById('unpaid-invoices-table');
+  if (!container) return;
+
+  container.innerHTML = `
     <div class="table-wrap">
       <table>
         <thead><tr><th>Invoice</th><th>Customer</th><th>Balance</th></tr></thead>
         <tbody>
           ${unpaid.map(inv => {
-            const o = oMap[inv.order_id]; const c = o ? cMap[o.customer_id] : null;
+            const o = oMap[inv.order_id];
             return `<tr>
               <td style="font-weight:700;">${inv.invoice_number}</td>
               <td>${o ? getOrderCustomerName(o, cMap) : '—'}</td>
@@ -431,6 +469,23 @@ async function renderUnpaidInvoices(invoices) {
           }).join('') || `<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:20px;">All paid!</td></tr>`}
         </tbody>
       </table>
+    </div>
+    <div class="mobile-card-list" style="padding:2px 0 0 0;">
+      ${unpaid.map(inv => {
+        const o = oMap[inv.order_id];
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg);border-radius:10px;margin-bottom:8px;border:1px solid var(--border);">
+            <div>
+              <div style="font-weight:700;font-size:0.9em;color:var(--text);">${inv.invoice_number}</div>
+              <div style="font-size:0.82em;color:var(--text-muted);margin-top:2px;">${o ? getOrderCustomerName(o, cMap) : '—'}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="color:var(--danger);font-weight:700;font-size:0.9em;">${formatCurrency(inv.balance)}</div>
+              <span class="badge badge-red" style="margin-top:2px;">Unpaid</span>
+            </div>
+          </div>
+        `;
+      }).join('') || `<div style="text-align:center;color:var(--text-muted);padding:14px;">All paid!</div>`}
     </div>`;
 }
 
