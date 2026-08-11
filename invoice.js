@@ -1123,10 +1123,128 @@ async function printInvoice(id) {
     <script>document.fonts.ready.then(()=>window.print());<\/script>
     </body></html>`;
 
-  const w = window.open('', '_blank');
-  if (!w) return toast('Please allow pop-ups to print', 'warning');
-  w.document.write(printHTML);
-  w.document.close();
+  if (typeof html2pdf !== 'undefined') {
+    const pdfWrap = document.createElement('div');
+    pdfWrap.innerHTML = `
+      <div style="font-family:'DM Sans',sans-serif;background:#fff;color:#1e293b;max-width:780px;margin:0 auto;padding:24px 28px;">
+        ${creditBanner}
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #e2e8f0;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            ${logoHTML}
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:1.4em;font-weight:700;color:#1a4d8f;">${settings.company_name}</div>
+              ${settings.address ? `<div style="font-size:0.82em;color:#64748b;margin-top:2px;">${settings.address}</div>` : ''}
+              <div style="font-size:0.82em;color:#64748b;">${[settings.phone, settings.email].filter(Boolean).join(' | ')}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.8em;font-weight:700;color:${isCredit ? '#7c3aed' : '#1a4d8f'};font-family:'Playfair Display',serif;">${isCredit ? 'CREDIT BILL' : 'INVOICE'}</div>
+            <div style="font-size:0.9em;color:#374151;margin-top:4px;"><strong>${inv.invoice_number}</strong></div>
+            <div style="font-size:0.8em;color:#64748b;margin-top:2px;">Issue Date: ${formatDate(inv.issue_date)}</div>
+            ${inv.delivery_date ? `<div style="font-size:0.8em;color:#64748b;">Delivery: ${formatDate(inv.delivery_date)}</div>` : ''}
+          </div>
+        </div>
+
+        <div style="font-size:12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+            <div style="background:#f8fafc;padding:12px 14px;border-radius:10px;border:1px solid #e2e8f0;">
+              <div style="font-size:0.75em;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:4px;letter-spacing:0.5px;">Billed To</div>
+              <div style="font-weight:700;font-size:1.1em;color:#0f172a;">${customer ? (customer.hotel_name || customer.name) : '—'}</div>
+              ${customer && customer.contact_person ? `<div style="color:#475569;margin-top:2px;">Attn: ${customer.contact_person}</div>` : ''}
+              ${customer && customer.phone ? `<div style="color:#64748b;margin-top:2px;"><i class="fas fa-phone"></i> ${customer.phone}</div>` : ''}
+              ${customer && customer.address ? `<div style="color:#64748b;margin-top:2px;">${customer.address}</div>` : ''}
+            </div>
+            <div style="background:#f8fafc;padding:12px 14px;border-radius:10px;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:center;">
+              <div style="font-size:0.75em;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:4px;letter-spacing:0.5px;">Order Details</div>
+              ${orderInfoHTML}
+            </div>
+          </div>
+
+          ${(() => {
+            if (inv.batch_order_ids) {
+              return `
+                <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+                  <thead>
+                    <tr style="background:#1a4d8f;color:#fff;">
+                      <th style="padding:8px 10px;text-align:left;font-size:0.8em;text-transform:uppercase;">Invoice Number</th>
+                      <th style="padding:8px 10px;text-align:left;font-size:0.8em;text-transform:uppercase;">Order Number</th>
+                      <th style="padding:8px 10px;text-align:left;font-size:0.8em;text-transform:uppercase;">Customer</th>
+                      <th style="padding:8px 10px;text-align:right;font-size:0.8em;text-transform:uppercase;">Payment per Invoice</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>`;
+            } else {
+              return `
+                <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+                  <thead>
+                    <tr style="background:#1a4d8f;color:#fff;">
+                      <th style="padding:8px 10px;text-align:left;font-size:0.8em;text-transform:uppercase;">Item</th>
+                      <th style="padding:8px 10px;text-align:center;font-size:0.8em;text-transform:uppercase;">Qty</th>
+                      <th style="padding:8px 10px;text-align:left;font-size:0.8em;text-transform:uppercase;">Service</th>
+                      <th style="padding:8px 10px;text-align:right;font-size:0.8em;text-transform:uppercase;">Unit Price</th>
+                      <th style="padding:8px 10px;text-align:right;font-size:0.8em;text-transform:uppercase;">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>${itemsHTML}</tbody>
+                </table>`;
+            }
+          })()}
+
+          <div style="display:flex;justify-content:flex-end;margin-bottom:20px;position:relative;">
+            ${paidStamp}
+            <div style="min-width:280px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+              ${summaryHTML}
+            </div>
+          </div>
+
+          ${payments.length > 0 ? `
+            <div style="margin-bottom:20px;">
+              <div style="font-size:0.75em;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:6px;letter-spacing:0.5px;">Payment History</div>
+              <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+                <thead>
+                  <tr style="background:#f8fafc;">
+                    <th style="padding:6px 10px;text-align:left;font-size:0.78em;color:#64748b;">Date</th>
+                    <th style="padding:6px 10px;text-align:left;font-size:0.78em;color:#64748b;">Method</th>
+                    <th style="padding:6px 10px;text-align:right;font-size:0.78em;color:#64748b;">Amount</th>
+                    <th style="padding:6px 10px;text-align:left;font-size:0.78em;color:#64748b;">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>${paymentsRows}</tbody>
+              </table>
+            </div>` : ''}
+
+          ${settings.footer_message ? `<div style="text-align:center;padding:12px;background:#f8fafc;border-radius:8px;font-size:0.85em;color:#64748b;font-style:italic;">${settings.footer_message}</div>` : ''}
+          <div style="margin-top:30px;display:flex;justify-content:space-between;align-items:flex-end;">
+            <div style="text-align:center;min-width:160px;">
+              <div style="height:40px;border-bottom:1.5px solid #1e293b;margin-bottom:4px;"></div>
+              <div style="font-size:0.8em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Issued By:-</div>
+            </div>
+            <div style="text-align:center;min-width:160px;">
+              <div style="height:40px;border-bottom:1.5px solid #1e293b;margin-bottom:4px;"></div>
+              <div style="font-size:0.8em;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">Checked By:-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const fileName = `Bill_${inv.invoice_number || 'INV'}.pdf`;
+    const opt = {
+      margin:       [8, 8, 8, 8],
+      filename:     fileName,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    await html2pdf().set(opt).from(pdfWrap).save();
+    toast(`PDF Bill downloaded: ${fileName}`);
+  } else {
+    const w = window.open('', '_blank');
+    if (!w) return toast('Please allow pop-ups to print', 'warning');
+    w.document.write(printHTML);
+    w.document.close();
+  }
   } finally {
     hideProcessingOverlay();
   }

@@ -25,16 +25,16 @@ async function renderOrders() {
     <div class="section-header">
       <span class="section-title">Orders</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        ${canAddOrders() ? `<button class="btn btn-primary" onclick="showAddOrderModal()"><i class="fas fa-plus"></i> New Order</button>` : ''}
+        ${canAddOrders() ? `<button class="btn btn-primary btn-sm" onclick="showAddOrderModal()"><i class="fas fa-plus"></i> New Order</button>` : ''}
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:18px;">
+    <div class="card" style="margin-bottom:18px;padding:14px 18px;">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        <div class="search-wrap" style="flex:1;min-width:200px;">
-          <i class="fas fa-search"></i>
-          <input class="form-input" id="orders-search-input"
-            placeholder="Search batch ID, customer, driver..."
+        <div class="search-wrap" style="flex:1;max-width:220px;min-width:140px;">
+          <i class="fas fa-search" style="font-size:0.85em;"></i>
+          <input class="form-input" id="orders-search-input" style="height:36px;font-size:0.85em;padding:6px 12px 6px 32px;"
+            placeholder="Search batch ID, customer..."
             autocomplete="off" spellcheck="false"
             oninput="ordersSearch=this.value;ordersPage=1;_refreshOrdersTable()"/>
         </div>
@@ -545,40 +545,62 @@ async function showAddOrderModal() {
   const [customers,drivers]=await Promise.all([DB.getCustomers(),DB.getDrivers()]);
   window._aoCustomersList = customers;
   window._aoMinDiscount = parseFloat(await DB.getSetting('min_discount_amount')||'0') || 0;
+
   createModal('add-order-modal','New Order',`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div class="form-group" style="grid-column: span 2;"><label class="form-label">Customer *</label>${pickerHTML('ao-cust','Type customer name...')}</div>
-      <div class="form-group"><label class="form-label">Pickup Date</label>
-        <input type="date" class="form-input" id="ao-pickup" value="${today()}"/></div>
-      <div class="form-group"><label class="form-label">Delivery Date</label>
-        <input type="date" class="form-input" id="ao-delivery"/></div>
-      <div class="form-group"><label class="form-label">Advance Payment (LKR)</label>
-        <input type="number" class="form-input" id="ao-advance" value="0" min="0" oninput="calcOrderTotal()"/></div>
-      <div class="form-group"><label class="form-label">Extra Payments (LKR)</label>
-        <input type="number" class="form-input" id="ao-extra-payment" value="0" min="0" oninput="calcOrderTotal()"/></div>
-    </div>
-
-    <!-- Items -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <span style="font-family:'Playfair Display',serif;font-size:1em;font-weight:700;color:var(--primary);">Order Items</span>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary btn-sm" onclick="showQuickAddItemModal('new-order')"><i class="fas fa-box-open"></i> Add New Item</button>
-        <button class="btn btn-secondary btn-sm" onclick="addOrderItemRow()"><i class="fas fa-plus"></i> Add Row</button>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:2.5fr 1.6fr 0.8fr 1.2fr auto;gap:8px;margin-bottom:4px;padding:0 2px;">
-      <span class="form-label">Item</span>
-      <span class="form-label">Service Type</span>
-      <span class="form-label">Qty</span>
-      <span class="form-label">Price (LKR)</span>
-      <span></span>
-    </div>
-    <div id="ao-items-container"></div>
-
-    <!-- Delivery + Discount + Total -->
-    <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <!-- Line 1: Customer -->
       <div class="form-group" style="margin:0;">
-        <label class="form-label">Delivery Charge (LKR)</label>
+        <label class="form-label" style="font-weight:700;">Customer *</label>
+        ${pickerHTML('ao-cust','Type customer name...')}
+      </div>
+
+      <!-- Line 2: Pickup Date | Delivery Date -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="font-weight:700;">Pickup Date</label>
+          <input type="date" class="form-input" id="ao-pickup" value="${today()}"/>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="font-weight:700;">Delivery Date</label>
+          <input type="date" class="form-input" id="ao-delivery"/>
+        </div>
+      </div>
+
+      <!-- Line 3: Advanced Payment | Extra Payments -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="font-weight:700;">Advance Payment (LKR)</label>
+          <input type="number" class="form-input" id="ao-advance" value="0" min="0" oninput="calcOrderTotal()"/>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" style="font-weight:700;">Extra Payments (LKR)</label>
+          <input type="number" class="form-input" id="ao-extra-payment" value="0" min="0" oninput="calcOrderTotal()"/>
+        </div>
+      </div>
+
+      <!-- Line 4: Order Items -->
+      <div>
+        <label class="form-label" style="font-weight:700;font-size:1em;color:var(--primary);margin-bottom:8px;display:block;">Order Items</label>
+        <div id="ao-items-container" style="display:flex;flex-direction:column;gap:12px;"></div>
+      </div>
+
+      <!-- Line 5: Add Row (Adds a new Item to bill) -->
+      <div>
+        <button type="button" class="btn btn-secondary" style="width:100%;justify-content:center;font-weight:600;" onclick="addOrderItemRow()">
+          <i class="fas fa-plus"></i> Add Row
+        </button>
+      </div>
+
+      <!-- Line 6: Add New Item (Adds new item to items tables) -->
+      <div>
+        <button type="button" class="btn btn-secondary" style="width:100%;justify-content:center;font-weight:600;" onclick="showQuickAddItemModal('new-order')">
+          <i class="fas fa-box-open"></i> Add New Item
+        </button>
+      </div>
+
+      <!-- Line 7: Delivery Charge & Discount -->
+      <div class="form-group" style="margin:0;">
+        <label class="form-label" style="font-weight:700;">Delivery Charge (LKR)</label>
         <input type="number" class="form-input" id="ao-delivery-charge" value="0" min="0" step="0.01" oninput="calcOrderTotal()"/>
       </div>
       <div class="form-group" id="ao-discount-wrap" style="margin:0;display:none;">
@@ -588,17 +610,23 @@ async function showAddOrderModal() {
         </label>
         <input type="number" class="form-input" id="ao-discount" value="0" min="0" max="100" step="0.1" oninput="calcOrderTotal()"/>
       </div>
+
+      <!-- Line 8: Grand Total -->
+      <div style="background:var(--bg);padding:14px;border-radius:12px;border:1.5px solid var(--border);text-align:center;margin-top:4px;">
+        <div style="font-size:0.8em;color:var(--text-muted);text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Grand Total</div>
+        <div style="font-size:1.8em;font-weight:800;color:var(--primary);font-family:'Playfair Display',serif;margin-top:2px;" id="ao-total">LKR 0.00</div>
+        <div style="font-size:0.8em;color:var(--text-muted);" id="ao-breakdown"></div>
+      </div>
+
+      <!-- Line 9: Create Bill Button -->
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button type="button" class="btn btn-secondary" style="flex:1;justify-content:center;" onclick="hideModal('add-order-modal')">Cancel</button>
+        <button type="button" class="btn btn-primary" style="flex:2;justify-content:center;font-size:1.05em;font-weight:700;min-height:48px;" onclick="saveNewOrder()">
+          <i class="fas fa-file-invoice"></i> Create Bill
+        </button>
+      </div>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;margin-top:8px;">
-      <div>
-        <div style="font-size:0.82em;color:var(--text-muted);" id="ao-breakdown"></div>
-        <strong style="font-size:1.15em;">Grand Total: <span id="ao-total">LKR 0.00</span></strong>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button class="btn btn-secondary" onclick="hideModal('add-order-modal')">Cancel [Esc]</button>
-        <button class="btn btn-primary" onclick="saveNewOrder()"><i class="fas fa-save"></i> Create [Enter]</button>
-      </div>
-    </div>`,'modal-lg');
+  `,'modal-lg');
   showModal('add-order-modal');
   initSearchPicker('ao-cust',customers,c=>c.hotel_name,c=>c.id,'');
   addOrderItemRow();
@@ -822,18 +850,39 @@ async function saveQuickAddItem(context = 'new-order') {
 
 async function addOrderItemRow(){
   const container=document.getElementById('ao-items-container');
+  if(!container) return;
   const row=document.createElement('div');
-  row.className='ao-item-row';
-  row.style.cssText='display:grid;grid-template-columns:2.5fr 1.6fr 0.8fr 1.2fr auto;gap:8px;margin-bottom:6px;align-items:center;';
-  row.innerHTML=`${buildItemPickerHTML()}
-    <select class="form-input form-select ao-svc" onchange="onAoSvcChange(this)" style="font-size:0.82em;padding:6px 8px;">
-      <option value="Dry Clean">Dry Clean</option>
-      <option value="Wash &amp; Press" selected>Wash &amp; Press</option>
-      <option value="Wash &amp; Dry">Wash &amp; Dry</option>
-    </select>
-    <input type="number" class="form-input ao-qty" value="1" min="1" oninput="calcOrderTotal()"/>
-    <input type="number" class="form-input ao-price" value="0" min="0" oninput="calcOrderTotal()" placeholder="Price"/>
-    <button class="btn btn-danger btn-icon btn-sm" onclick="this.parentElement.remove();calcOrderTotal()"><i class="fas fa-trash"></i></button>`;
+  row.className='ao-item-row card';
+  row.style.cssText='padding:14px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;margin:0;box-shadow:none;display:flex;flex-direction:column;gap:10px;';
+  row.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <label class="form-label" style="font-weight:700;margin:0;">Item *</label>
+      <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.ao-item-row').remove();calcOrderTotal()" style="padding:4px 10px;font-size:0.8em;">
+        <i class="fas fa-trash-alt"></i> Delete
+      </button>
+    </div>
+    <div>
+      ${buildItemPickerHTML()}
+    </div>
+    <div>
+      <label class="form-label" style="font-weight:600;font-size:0.8em;color:var(--text-muted);">Service Type</label>
+      <select class="form-input form-select ao-svc" onchange="onAoSvcChange(this)" style="font-size:0.9em;">
+        <option value="Dry Clean">Dry Clean</option>
+        <option value="Wash &amp; Press" selected>Wash &amp; Press</option>
+        <option value="Wash &amp; Dry">Wash &amp; Dry</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <label class="form-label" style="font-weight:600;font-size:0.8em;color:var(--text-muted);">Quantity</label>
+        <input type="number" class="form-input ao-qty" value="1" min="1" oninput="calcOrderTotal()"/>
+      </div>
+      <div>
+        <label class="form-label" style="font-weight:600;font-size:0.8em;color:var(--text-muted);">Price (LKR)</label>
+        <input type="number" class="form-input ao-price" value="0" min="0" oninput="calcOrderTotal()" placeholder="Price"/>
+      </div>
+    </div>
+  `;
   container.appendChild(row);
 }
 function calcOrderTotal(){
