@@ -2561,16 +2561,13 @@ async function renderRecentActions() {
         <table class="table" style="width:100%;border-collapse:collapse;margin:0;display:table !important;">
           <thead>
             <tr style="background:var(--bg-secondary);border-bottom:2px solid var(--border);">
-              <th style="padding:8px 12px;width:150px;font-size:0.82em;">Timestamp</th>
-              <th style="padding:8px 12px;width:150px;font-size:0.82em;">Action Type</th>
-              <th style="padding:8px 12px;width:120px;font-size:0.82em;">Category</th>
-              <th style="padding:8px 12px;font-size:0.82em;">Description</th>
-              <th style="padding:8px 12px;width:130px;font-size:0.82em;">Performed By</th>
-              <th style="padding:8px 12px;text-align:center;width:70px;font-size:0.82em;">Details</th>
+              <th style="padding:10px 14px;width:180px;font-size:0.85em;">TimeStamp</th>
+              <th style="padding:10px 14px;font-size:0.85em;">Description</th>
+              <th style="padding:10px 14px;text-align:center;width:90px;font-size:0.85em;">Action</th>
             </tr>
           </thead>
           <tbody id="actions-table-body">
-            <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading recent actions...</td></tr>
+            <tr><td colspan="3" style="text-align:center;padding:24px;color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading recent actions...</td></tr>
           </tbody>
         </table>
       </div>
@@ -2636,69 +2633,24 @@ async function _refreshActionsTable() {
   const pageItems = sortedActions.slice(startIdx, startIdx + actionsPerPage);
 
   if (pageItems.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:1.6em;margin-bottom:6px;">📋</div>No recent actions recorded</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:30px;color:var(--text-muted);"><div style="font-size:1.6em;margin-bottom:6px;">📋</div>No recent actions recorded</td></tr>`;
   } else {
     tbody.innerHTML = pageItems.map(a => {
       const dt = new Date(a.timestamp);
       const timeFormatted = isNaN(dt.getTime()) ? '—' : dt.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
       const relTime = getRelativeTime(a.timestamp);
 
-      let badgeStyle = 'background:var(--secondary);color:var(--text);border:1px solid var(--border);';
-      let icon = 'fa-info-circle';
-      const at = a.action_type || '';
-
-      if (at.includes('Add') || at.includes('New Order')) {
-        badgeStyle = 'background:#dcfce7;color:#15803d;border:1px solid #86efac;';
-        icon = 'fa-plus-circle';
-      } else if (at.includes('Delete')) {
-        badgeStyle = 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;';
-        icon = 'fa-trash-alt';
-      } else if (at.includes('Phone')) {
-        badgeStyle = 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;';
-        icon = 'fa-phone-alt';
-      } else if (at.includes('Edit') || at.includes('Update')) {
-        badgeStyle = 'background:#e0f2fe;color:#075985;border:1px solid #bae6fd;';
-        icon = 'fa-edit';
-      } else if (at.includes('Payment') || at.includes('Deduction')) {
-        badgeStyle = 'background:#f3e8ff;color:#7e22ce;border:1px solid #d8b4fe;';
-        icon = 'fa-money-bill-wave';
-      } else if (at.includes('Login') || at.includes('Logout')) {
-        badgeStyle = 'background:#cffafe;color:#0e7490;border:1px solid #a5f3fc;';
-        icon = 'fa-user-clock';
-      }
-
-      const catIcons = { Customer: 'fa-hotel', Order: 'fa-boxes-stacked', Driver: 'fa-truck', Item: 'fa-list-check', Payment: 'fa-coins', System: 'fa-cog', User: 'fa-user-shield' };
-      const catIcon = catIcons[a.category] || 'fa-tag';
-
       return `<tr style="border-bottom:1px solid var(--border);">
-        <td style="white-space:nowrap;padding:8px 12px;">
-          <div style="font-weight:600;font-size:0.83em;">${timeFormatted}</div>
-          <span style="font-size:0.72em;color:var(--text-muted);">${relTime}</span>
+        <td style="white-space:nowrap;padding:10px 14px;">
+          <div style="font-weight:600;font-size:0.85em;">${timeFormatted}</div>
+          <span style="font-size:0.75em;color:var(--text-muted);">${relTime}</span>
         </td>
-        <td style="padding:8px 12px;">
-          <span class="badge" style="${badgeStyle}font-size:0.74em;padding:3px 7px;border-radius:6px;">
-            <i class="fas ${icon}" style="font-size:0.8em;margin-right:3px;"></i>${at}
-          </span>
+        <td style="padding:10px 14px;">
+          <div style="font-size:0.88em;font-weight:500;line-height:1.4;">${a.description || '—'}</div>
         </td>
-        <td style="padding:8px 12px;">
-          <span style="font-size:0.8em;color:var(--text-muted);font-weight:600;">
-            <i class="fas ${catIcon}" style="margin-right:3px;color:var(--primary);"></i>${a.category || 'System'}
-          </span>
-        </td>
-        <td style="padding:8px 12px;">
-          <div style="font-size:0.85em;font-weight:500;line-height:1.3;">${a.description || '—'}</div>
-        </td>
-        <td style="padding:8px 12px;">
-          <div style="display:flex;align-items:center;gap:5px;">
-            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.7em;font-weight:700;flex-shrink:0;">
-              ${(a.user || 'A').charAt(0).toUpperCase()}
-            </div>
-            <span style="font-size:0.8em;font-weight:600;">${a.user || 'System'}</span>
-          </div>
-        </td>
-        <td style="text-align:center;padding:8px 12px;">
-          <button class="btn btn-secondary btn-sm" onclick="showActionDetailsModal('${a.id}')" style="padding:2px 8px;font-size:0.75em;" title="View Details">
-            <i class="fas fa-info-circle"></i>
+        <td style="text-align:center;padding:10px 14px;">
+          <button class="btn btn-secondary btn-sm" onclick="showActionDetailsModal('${a.id}')" style="padding:4px 10px;font-size:0.8em;" title="View Details">
+            <i class="fas fa-eye"></i> View
           </button>
         </td>
       </tr>`;
