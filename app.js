@@ -501,26 +501,18 @@ async function renderCustomers() {
   document.getElementById('page-title').textContent = 'Customers';
   if (document.getElementById('cust-table-body')) { await _refreshCustomersTable(); return; }
   document.getElementById('content').innerHTML = `
-    <div class="section-header">
+    <div class="section-header" style="padding-right:6px;margin-bottom:14px;">
       <span class="section-title">Hotel Customers</span>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-right:4px;">
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="openGlobalSearchModal()" title="Search Customers [Ctrl+K]">
+          <i class="fas fa-search"></i>
+        </button>
         ${canBackupRestore() ? `
-          <button class="btn btn-secondary" onclick="exportCustomers()" title="Export customers to JSON"><i class="fas fa-download"></i> Backup</button>
-          <button class="btn btn-secondary" onclick="document.getElementById('cust-import-file').click()" title="Import customers from JSON"><i class="fas fa-upload"></i> Import</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportCustomers()" title="Export customers to JSON"><i class="fas fa-download"></i> Backup</button>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cust-import-file').click()" title="Import customers from JSON"><i class="fas fa-upload"></i> Import</button>
           <input type="file" id="cust-import-file" accept=".json" style="display:none" onchange="importCustomers(this)"/>
         ` : ''}
-        <button class="btn btn-primary" onclick="showAddCustomerModal()"><i class="fas fa-plus"></i> Add Customer</button>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:18px;">
-      <div style="display:flex;gap:12px;align-items:center;">
-        <div class="search-wrap" style="flex:1;">
-          <i class="fas fa-search"></i>
-          <input class="form-input" id="cust-search-input" placeholder="Search hotel, contact, phone..."
-            autocomplete="off" spellcheck="false"
-            oninput="custSearch=this.value;custPage=1;_refreshCustomersTable()"/>
-        </div>
-        <span id="cust-count" style="font-size:0.82em;color:var(--text-muted);"></span>
+        <button class="btn btn-primary btn-sm" onclick="showAddCustomerModal()"><i class="fas fa-plus"></i> Add Customer</button>
       </div>
     </div>
     <div class="card" style="padding:0;">
@@ -534,7 +526,7 @@ async function renderCustomers() {
       <div id="cust-pagination" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);"></div>
     </div>`;
   await _refreshCustomersTable();
-  document.getElementById('cust-search-input').focus();
+  document.getElementById('cust-search-input')?.focus();
 }
 
 async function _refreshCustomersTable() {
