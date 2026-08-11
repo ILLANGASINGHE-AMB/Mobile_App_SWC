@@ -268,7 +268,7 @@ const TransportModule = {
             </tbody>
           </table>
         </div>
-        <div class="mobile-card-list p-3" style="display:none;">
+        <div class="mobile-card-list p-3">
           ${mobileCardsHTML}
         </div>
       </div>

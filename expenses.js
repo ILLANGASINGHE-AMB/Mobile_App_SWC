@@ -290,7 +290,7 @@ const ExpensesModule = {
         totalCash += (exp.amount || 0);
         totalAveraged += (exp.monthly_averaged_amount || exp.amount || 0);
 
-        const isMultiMonth = (exp.months_covered || 1) > 1;
+        let isMultiMonth = (exp.months_covered || 1) > 1;
 
         rowsHTML += `
           <tr class="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition-colors border-b border-slate-200 dark:border-slate-700">
@@ -328,6 +328,35 @@ const ExpensesModule = {
       });
     }
 
+    let mobileCardsHTML = '';
+    if (expenses.length === 0) {
+      mobileCardsHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.88em;">No general expenses recorded yet.</div>`;
+    } else {
+      expenses.forEach(exp => {
+        const isMulti = (exp.months_covered || 1) > 1;
+        mobileCardsHTML += `
+          <div class="card" style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-weight:700;font-family:monospace;font-size:0.85em;color:var(--primary);">${exp.expense_id}</span>
+              <span class="badge badge-blue">${exp.payment_method || 'Cash'}</span>
+            </div>
+            <div style="font-weight:700;font-size:0.95em;margin-bottom:4px;">${exp.expense_name}</div>
+            ${exp.notes ? `<div style="font-size:0.8em;color:var(--text-muted);margin-bottom:6px;">${exp.notes}</div>` : ''}
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+              <div>
+                <div style="font-size:0.75em;color:var(--text-muted);">${exp.expense_date}</div>
+                <div style="font-size:0.82em;font-weight:600;color:var(--primary);">${isMulti ? exp.months_covered + ' mos' : '1 mo'}</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-weight:700;font-size:1em;">LKR ${parseFloat(exp.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                ${canDelete() ? `<button onclick="ExpensesModule.deleteGeneralExpense('${exp.id}')" class="btn btn-sm btn-danger" style="margin-top:4px;padding:2px 8px;font-size:0.75em;"><i class="fa-solid fa-trash-can"></i> Delete</button>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
     container.innerHTML = `
       <div class="space-y-4">
         <!-- Summary Banner Cards -->
@@ -357,7 +386,7 @@ const ExpensesModule = {
           </div>
         </div>
 
-        <!-- Table Container -->
+        <!-- Records Container -->
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
             <div>
@@ -371,7 +400,7 @@ const ExpensesModule = {
             </button>
           </div>
 
-          <div class="overflow-x-auto">
+          <div class="table-wrap overflow-x-auto">
             <table class="w-full text-left border-collapse min-w-[650px]">
               <thead>
                 <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
@@ -389,6 +418,9 @@ const ExpensesModule = {
                 ${rowsHTML}
               </tbody>
             </table>
+          </div>
+          <div class="mobile-card-list p-3">
+            ${mobileCardsHTML}
           </div>
         </div>
       </div>

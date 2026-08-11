@@ -277,7 +277,6 @@ document.addEventListener('click', e => {
 // KEYBOARD SHORTCUTS (Non-touch devices)
 // ─────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if ('ontouchstart' in window && window.innerWidth <= 768) return;
   const tag = document.activeElement?.tagName?.toLowerCase();
   const inInput = ['input','textarea','select'].includes(tag);
   const modal = document.querySelector('.modal-overlay[style*="flex"]');

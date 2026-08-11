@@ -297,8 +297,6 @@ async function saveCompanySettings() {
     if (el) await DB.setSetting(key, el.value);
   }
   const name = document.getElementById('s-company')?.value || 'Sagacious Washing Center';
-  const sn = document.getElementById('sidebar-company-name');
-  if (sn) sn.innerHTML = name.replace(' ', '<br/>');
   await DB.logAction('Settings Updated', 'Updated company profile settings', { company_name: name }, 'System');
   toast('Company settings saved!');
 }
@@ -339,14 +337,11 @@ async function handleLogoUpload(event) {
 }
 
 function updateLogo(dataURL) {
-  const el = document.getElementById('sidebar-logo-img');
-  if (el) el.innerHTML = `<img src="${dataURL}" style="width:40px;height:40px;border-radius:10px;object-fit:cover;"/>`;
+  // Mobile Topbar Logo support
 }
 
 async function removeLogo() {
   await DB.setSetting('logo_data', null);
-  const el = document.getElementById('sidebar-logo-img');
-  if (el) el.innerHTML = '<i class="fas fa-soap"></i>';
   toast('Logo removed'); renderSettings();
 }
 

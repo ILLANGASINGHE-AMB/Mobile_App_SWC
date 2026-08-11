@@ -46,9 +46,6 @@ async function doLogin() {
 document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 function updateRoleChip() {
-  const footer = document.getElementById('sidebar-user-info');
-  if (footer) footer.innerHTML = ''; // Removed from bottom of navigation bar per user request
-
   const avatar = document.getElementById('topbar-avatar');
   if (avatar && currentUser) {
     const roleLetters = { admin: 'A', user: 'S', driver: 'D' };
@@ -101,10 +98,9 @@ function applyRoleSidebarRestrictions() {
   if (!currentUser) return;
   const allowed = getRoleAllowedPages();
 
-  document.querySelectorAll('nav.sidebar-nav a').forEach(a => {
-    const page = a.dataset.page;
-    a.style.display = allowed.includes(page) ? 'flex' : 'none';
-  });
+  if (typeof renderBottomNav === 'function') {
+    renderBottomNav(currentUser.role);
+  }
 
   if (!allowed.includes(currentPage)) {
     const defaultPage = isDriver() ? 'transport' : 'dashboard';
@@ -180,8 +176,8 @@ async function applySettings() {
   }
 
   if (companyName) {
-    const el = document.getElementById('sidebar-company-name');
-    if (el) el.innerHTML = companyName.replace(' ', '<br/>');
+    const el = document.getElementById('page-title');
+    if (el) el.title = companyName;
   }
 
   if (logoData && typeof updateLogo === 'function') {
@@ -190,7 +186,7 @@ async function applySettings() {
 }
 
 // ─────────────────────────────────────────────
-// NAVIGATION
+// NAVIGATION (Portrait Mobile Bottom Nav)
 // ─────────────────────────────────────────────
 function navigate(page) {
   const allowed = getRoleAllowedPages();
@@ -201,17 +197,16 @@ function navigate(page) {
   Object.values(dashCharts).forEach(c => { try { c.destroy(); } catch(e){} });
   dashCharts = {};
 
-  document.querySelectorAll('nav.sidebar-nav a').forEach(a => {
-    a.classList.toggle('active', a.dataset.page === page);
-  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 
   const titles = {
-    dashboard: 'Dashboard', customers: 'Customers', drivers: 'Drivers', transport: 'Transport & Trip Management',
+    dashboard: 'Dashboard', customers: 'Customers', drivers: 'Drivers', transport: 'Transport & Trips',
     orders: 'Orders', paynow: 'Pay Now', invoices: 'Invoices', payments: 'Payments',
     items: 'Items', expenses: 'Expenses & Chemical Register', analytics: 'Data Analytics', reports: 'Reports', settings: 'Settings', deductions: 'Deductions',
     'recent-actions': 'Recent Actions'
   };
-  document.getElementById('page-title').textContent = titles[page] || page;
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) titleEl.textContent = titles[page] || page;
 
   const pages = {
     dashboard: renderDashboard,
