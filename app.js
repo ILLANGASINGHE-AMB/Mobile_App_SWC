@@ -828,7 +828,7 @@ async function printCustomerSalesSummary(customerId) {
           </div>
         </div>
       </div>
-      <script>document.fonts.ready.then(()=>window.print());<\/script>
+      <script>document.fonts.ready.then(()=>window.print());</script>
       </body></html>`;
 
     const w = window.open('', '_blank');
@@ -849,27 +849,25 @@ async function renderDrivers() {
   document.getElementById('page-title').textContent = 'Drivers';
   if (document.getElementById('drv-grid')) { await _refreshDriversGrid(); return; }
   document.getElementById('content').innerHTML = `
-    <div class="section-header">
+    <div class="section-header" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <span class="section-title">Drivers</span>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary" onclick="exportDrivers()" title="Export drivers to JSON"><i class="fas fa-download"></i> Backup</button>
-        <button class="btn btn-secondary" onclick="document.getElementById('drv-import-file').click()" title="Import drivers from JSON"><i class="fas fa-upload"></i> Import</button>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="openGlobalSearchModal()" title="Search Drivers [Ctrl+K]">
+          <i class="fas fa-search"></i>
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="exportDrivers()" title="Export drivers to JSON" style="padding:6px 12px;font-size:0.82em;">
+          <i class="fas fa-download"></i> Backup
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('drv-import-file').click()" title="Import drivers from JSON" style="padding:6px 12px;font-size:0.82em;">
+          <i class="fas fa-upload"></i> Import
+        </button>
         <input type="file" id="drv-import-file" accept=".json" style="display:none" onchange="importDrivers(this)"/>
-        <button class="btn btn-primary" onclick="showAddDriverModal()"><i class="fas fa-plus"></i> Add Driver</button>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:18px;">
-      <div class="search-wrap" style="max-width:360px;">
-        <i class="fas fa-search"></i>
-        <input class="form-input" id="drv-search-input" placeholder="Search name, phone, vehicle..."
-          autocomplete="off" spellcheck="false"
-          oninput="drvSearch=this.value;drvPage=1;_refreshDriversGrid()"/>
+        ${canAddOrders() ? `<button class="btn btn-primary btn-sm" onclick="showAddDriverModal()" style="padding:6px 12px;font-size:0.82em;font-weight:700;"><i class="fas fa-plus"></i> Add Driver</button>` : ''}
       </div>
     </div>
     <div id="drv-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
     <div id="drv-pagination" style="margin-top:16px;display:flex;justify-content:flex-end;"></div>`;
   await _refreshDriversGrid();
-  document.getElementById('drv-search-input').focus();
 }
 
 async function _refreshDriversGrid() {
@@ -889,34 +887,49 @@ function changeDrvPage(p) { drvPage=p; _refreshDriversGrid(); }
 function driverCard(d) {
   const sc = d.status==='available'?'badge-green':d.status==='on-trip'?'badge-yellow':'badge-gray';
   return `<div class="card">
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-      <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#1a4d8f,#00b4d8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3em;font-weight:700;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1a4d8f,#00b4d8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.15em;font-weight:700;flex-shrink:0;">
         ${d.name.charAt(0)}</div>
-      <div><div style="font-weight:700;">${d.name}</div><span class="badge ${sc}">${d.status||'available'}</span></div>
+      <div>
+        <div style="font-weight:700;font-size:0.95em;">${d.name}</div>
+        <span class="badge ${sc}" style="font-size:0.75em;">${d.status||'available'}</span>
+      </div>
     </div>
-    <div style="font-size:0.88em;color:var(--text-muted);margin-bottom:4px;"><i class="fas fa-phone" style="width:16px;"></i> ${d.phone||'—'}</div>
-    <div style="font-size:0.88em;color:var(--text-muted);margin-bottom:14px;"><i class="fas fa-car" style="width:16px;"></i> ${d.vehicle||'—'}</div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-primary btn-sm" onclick="showEditDriverModal(${d.id})"><i class="fas fa-edit"></i> Edit</button>
-      <button class="btn btn-secondary btn-sm" onclick="toggleDriverStatus(${d.id},'${d.status}')"><i class="fas fa-toggle-on"></i> Status</button>
-      <button class="btn btn-danger btn-sm" onclick="deleteDriverConfirm(${d.id})"><i class="fas fa-trash"></i></button>
+    <div style="font-size:0.84em;color:var(--text-muted);margin-bottom:4px;"><i class="fas fa-phone" style="width:16px;"></i> ${d.phone||'—'}</div>
+    <div style="font-size:0.84em;color:var(--text-muted);margin-bottom:12px;"><i class="fas fa-car" style="width:16px;"></i> ${d.vehicle||'—'}</div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-primary btn-sm" onclick="showEditDriverModal(${d.id})" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-edit"></i> Edit</button>
+      <button class="btn btn-secondary btn-sm" onclick="toggleDriverStatus(${d.id},'${d.status}')" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-toggle-on"></i> Status</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteDriverConfirm(${d.id})" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-trash"></i></button>
     </div>
   </div>`;
 }
 
 function showAddDriverModal() {
   createModal('add-drv-modal','Add Driver',`
-    <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="d-name" placeholder="Kamal Rathnayake" maxlength="80"/></div>
-    <div class="form-group"><label class="form-label">Phone <span style="color:var(--text-muted);font-size:0.82em;">(10 digits)</span></label>
-      <input class="form-input" id="d-phone" placeholder="0771234567" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"/></div>
-    <div class="form-group"><label class="form-label">Vehicle & Plate</label><input class="form-input" id="d-vehicle" placeholder="Toyota Hiace - WP-AB-1234" maxlength="80"/></div>
-    <div class="form-group"><label class="form-label">Status</label>
-      <select class="form-input form-select" id="d-status">
-        <option value="available">Available</option><option value="on-trip">On Trip</option><option value="off-duty">Off Duty</option>
-      </select></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
-      <button class="btn btn-secondary" onclick="hideModal('add-drv-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveNewDriver()"><i class="fas fa-save"></i> Save</button>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-weight:700;font-size:0.78em;">FULL NAME *</label>
+      <input class="form-input" id="d-name" placeholder="Kamal Rathnayake" maxlength="80" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-weight:700;font-size:0.78em;">PHONE <span style="color:var(--text-muted);font-weight:400;">(10 digits)</span></label>
+      <input class="form-input" id="d-phone" placeholder="0771234567" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,10)" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-weight:700;font-size:0.78em;">VEHICLE & PLATE</label>
+      <input class="form-input" id="d-vehicle" placeholder="Toyota Hiace - WP-AB-1234" maxlength="80" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-weight:700;font-size:0.78em;">STATUS</label>
+      <select class="form-input form-select" id="d-status" style="font-size:0.85em;padding:9px 12px;border-radius:10px;">
+        <option value="available">Available</option>
+        <option value="on-trip">On Trip</option>
+        <option value="off-duty">Off Duty</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:1px solid var(--border);">
+      <button class="btn btn-secondary btn-sm" onclick="hideModal('add-drv-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveNewDriver()" style="font-weight:700;padding:8px 14px;font-size:0.85em;"><i class="fas fa-save"></i> Save Driver</button>
     </div>`);
   showModal('add-drv-modal');
 }
@@ -939,17 +952,27 @@ async function saveNewDriver() {
 async function showEditDriverModal(id) {
   const d=await DB.getDriver(id); if(!d) return;
   createModal('edit-drv-modal','Edit Driver',`
-    <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="ed-name" value="${d.name||''}" maxlength="80"/></div>
-    <div class="form-group"><label class="form-label">Phone <span style="color:var(--text-muted);font-size:0.82em;">(10 digits)</span></label>
-      <input class="form-input" id="ed-phone" value="${d.phone||''}" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"/></div>
-    <div class="form-group"><label class="form-label">Vehicle & Plate</label><input class="form-input" id="ed-vehicle" value="${d.vehicle||''}" maxlength="80"/></div>
-    <div class="form-group"><label class="form-label">Status</label>
-      <select class="form-input form-select" id="ed-status">
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-weight:700;font-size:0.78em;">FULL NAME *</label>
+      <input class="form-input" id="ed-name" value="${d.name||''}" maxlength="80" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-weight:700;font-size:0.78em;">PHONE <span style="color:var(--text-muted);font-weight:400;">(10 digits)</span></label>
+      <input class="form-input" id="ed-phone" value="${d.phone||''}" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,10)" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="font-weight:700;font-size:0.78em;">VEHICLE & PLATE</label>
+      <input class="form-input" id="ed-vehicle" value="${d.vehicle||''}" maxlength="80" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label" style="font-weight:700;font-size:0.78em;">STATUS</label>
+      <select class="form-input form-select" id="ed-status" style="font-size:0.85em;padding:9px 12px;border-radius:10px;">
         ${['available','on-trip','off-duty'].map(s=>`<option value="${s}" ${d.status===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
-      </select></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
-      <button class="btn btn-secondary" onclick="hideModal('edit-drv-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEditDriver(${id})"><i class="fas fa-save"></i> Save</button>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:1px solid var(--border);">
+      <button class="btn btn-secondary btn-sm" onclick="hideModal('edit-drv-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEditDriver(${id})" style="font-weight:700;padding:8px 14px;font-size:0.85em;"><i class="fas fa-save"></i> Save Driver</button>
     </div>`);
   showModal('edit-drv-modal');
 }
