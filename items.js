@@ -19,30 +19,21 @@ async function renderItems() {
   }
 
   document.getElementById('content').innerHTML = `
-    <div class="section-header">
+    <div class="section-header" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <span class="section-title">Items Catalog</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        ${canUseQuotation()?'<button class="btn btn-primary" onclick="showGenerateQuotationModal()"><i class="fas fa-file-invoice"></i> Generate Quotation</button>':''}
-        ${canUseQuotation()?'<button class="btn btn-secondary" onclick="showDefaultTermsModal()"><i class="fas fa-file-contract"></i> Terms &amp; Conditions</button>':''}
-        ${isAdmin()?'<button class="btn btn-secondary" onclick="printItemsCatalog()"><i class="fas fa-print"></i> Print Catalog</button>':''}
-        ${isAdmin()?'<button class="btn btn-secondary" onclick="exportItems()"><i class="fas fa-download"></i> Backup</button>':''}
-        ${isAdmin()?'<button class="btn btn-secondary" onclick="document.getElementById(\'items-import-file\').click()"><i class="fas fa-upload"></i> Import</button>':''}
-        <input type="file" id="items-import-file" accept=".json" style="display:none" onchange="importItems(this)"/>
-        ${canEditItems()?'<button class="btn btn-primary" onclick="showAddItemModal()"><i class="fas fa-plus"></i> Add Item</button>':''}
-      </div>
-    </div>
-    <div id="items-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px;"></div>
-    <div class="card" style="margin-bottom:18px;">
-      <div style="display:flex;gap:12px;align-items:center;">
-        <div class="search-wrap" style="flex:1;">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="openGlobalSearchModal()" title="Search Items [Ctrl+K]">
           <i class="fas fa-search"></i>
-          <input class="form-input" id="items-search-input" placeholder="Search item ID, name..."
-            autocomplete="off" spellcheck="false"
-            oninput="itemsSearch=this.value;itemsPage=1;_refreshItemsTable()"/>
-        </div>
-        <span id="items-count" style="font-size:0.82em;color:var(--text-muted);"></span>
+        </button>
+        ${canUseQuotation()?'<button class="btn btn-primary btn-sm" onclick="showGenerateQuotationModal()" style="padding:6px 12px;font-size:0.82em;font-weight:700;"><i class="fas fa-file-invoice"></i> Quotation</button>':''}
+        ${canUseQuotation()?'<button class="btn btn-secondary btn-sm" onclick="showDefaultTermsModal()" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-file-contract"></i> Terms</button>':''}
+        ${isAdmin()?'<button class="btn btn-secondary btn-sm" onclick="exportItems()" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-download"></i> Backup</button>':''}
+        ${isAdmin()?'<button class="btn btn-secondary btn-sm" onclick="document.getElementById(\'items-import-file\').click()" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-upload"></i> Import</button>':''}
+        <input type="file" id="items-import-file" accept=".json" style="display:none" onchange="importItems(this)"/>
+        ${canEditItems()?'<button class="btn btn-primary btn-sm" onclick="showAddItemModal()" style="padding:6px 12px;font-size:0.82em;font-weight:700;"><i class="fas fa-plus"></i> Add Item</button>':''}
       </div>
     </div>
+    <div id="items-stats" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;"></div>
     <div class="card" style="padding:0;">
       <div class="table-wrap">
         <table>
@@ -58,13 +49,14 @@ async function renderItems() {
           <tbody id="items-table-body"></tbody>
         </table>
       </div>
+      <div id="items-mobile-cards" class="mobile-card-list" style="padding:12px;"></div>
       <div id="items-pagination" style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);"></div>
     </div>
 
     <!-- QUOTATIONS GENERATED HISTORY SECTION -->
-    <div class="card" style="margin-top:28px;">
-      <div class="section-header" style="margin-bottom:14px;">
-        <span class="section-title" style="font-size:1.1em;"><i class="fas fa-history"></i> Quotations Generated History</span>
+    <div class="card" style="margin-top:24px;">
+      <div class="section-header" style="margin-bottom:12px;">
+        <span class="section-title" style="font-size:1.05em;"><i class="fas fa-history"></i> Quotations Generated History</span>
       </div>
       <div class="table-wrap">
         <table>
@@ -84,7 +76,6 @@ async function renderItems() {
     </div>`;
   await _refreshItemsTable();
   await _refreshQuotationsHistoryTable();
-  document.getElementById('items-search-input')?.focus();
 }
 
 async function _refreshItemsTable() {
@@ -99,7 +90,7 @@ async function _refreshItemsTable() {
   const statsEl = document.getElementById('items-stats');
   if(statsEl) {
     statsEl.innerHTML =
-      `<div class="stat-card"><div class="label">Total Items</div><div class="value">${allItems.length}</div><div class="sub">In catalog</div></div>`;
+      `<div class="stat-card" style="flex:1;min-width:140px;"><div class="label">Total Items</div><div class="value">${allItems.length}</div><div class="sub">In catalog</div></div>`;
   }
   const countEl = document.getElementById('items-count');
   if(countEl) countEl.textContent = total+' item'+(total!==1?'s':'');
@@ -126,19 +117,19 @@ async function _refreshItemsTable() {
       ? `<div style="text-align:center;padding:24px;color:var(--text-muted);">No items found</div>`
       : items.map(item => `
         <div class="mobile-card">
-          <div class="mobile-card-top">
-            <div class="mobile-card-title">${item.item_name}</div>
-            <span style="font-family:monospace;font-weight:700;font-size:0.85em;background:var(--bg);padding:2px 8px;border-radius:6px;border:1px solid var(--border);">${item.item_id}</span>
+          <div class="mobile-card-top" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span class="mobile-card-title" style="font-size:0.95em;font-weight:700;">${item.item_name}</span>
+            <span style="font-family:monospace;font-weight:700;font-size:0.82em;background:var(--bg);padding:3px 8px;border-radius:6px;border:1px solid var(--border);">${item.item_id}</span>
           </div>
-          <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:10px;">${item.description || 'No description'}</div>
+          <div style="font-size:0.82em;color:var(--text-muted);margin:4px 0 8px;">${item.description || 'No description'}</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;text-align:center;background:var(--bg);padding:8px;border-radius:8px;border:1px solid var(--border);">
-            <div><div class="mobile-card-label">Dry Clean</div><div class="mobile-card-value" style="font-size:0.82em;">${formatCurrency(item.dry_clean_price||0)}</div></div>
-            <div><div class="mobile-card-label">Wash & Press</div><div class="mobile-card-value" style="font-size:0.82em;">${formatCurrency(item.wash_press_price||0)}</div></div>
-            <div><div class="mobile-card-label">Wash & Dry</div><div class="mobile-card-value" style="font-size:0.82em;">${formatCurrency(item.wash_dry_price||0)}</div></div>
+            <div><div class="mobile-card-label" style="font-size:0.75em;">Dry Clean</div><div class="mobile-card-value" style="font-size:0.82em;font-weight:700;color:var(--purple);">${formatCurrency(item.dry_clean_price||0)}</div></div>
+            <div><div class="mobile-card-label" style="font-size:0.75em;">Wash &amp; Press</div><div class="mobile-card-value" style="font-size:0.82em;font-weight:700;color:var(--cyan);">${formatCurrency(item.wash_press_price||0)}</div></div>
+            <div><div class="mobile-card-label" style="font-size:0.75em;">Wash &amp; Dry</div><div class="mobile-card-value" style="font-size:0.82em;font-weight:700;color:var(--success);">${formatCurrency(item.wash_dry_price||0)}</div></div>
           </div>
-          <div class="mobile-card-actions">
-            ${canEditItems()?`<button class="btn btn-primary btn-sm" onclick="showEditItemModal(${item.id})"><i class="fas fa-edit"></i> Edit</button>`:''}
-            ${canDelete()?`<button class="btn btn-danger btn-sm" onclick="deleteItemConfirm(${item.id})"><i class="fas fa-trash"></i> Delete</button>`:''}
+          <div class="mobile-card-actions" style="display:flex;gap:6px;">
+            ${canEditItems()?`<button class="btn btn-primary btn-sm" onclick="showEditItemModal(${item.id})" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-edit"></i> Edit</button>`:''}
+            ${canDelete()?`<button class="btn btn-danger btn-sm" onclick="deleteItemConfirm(${item.id})" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-trash"></i> Delete</button>`:''}
           </div>
         </div>`).join('');
   }
@@ -155,41 +146,43 @@ function changeItemsPage(p){itemsPage=p;renderItems();}
 async function showAddItemModal() {
   if(!canEditItems()) return;
   createModal('add-item-modal','Add New Item',`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div class="form-group">
-        <label class="form-label">Item ID *</label>
-        <input class="form-input" id="it-id" placeholder="e.g. BS, TW, PC" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
-        <span style="font-size:0.78em;color:var(--text-muted);">Short unique code</span>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:110px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">ITEM ID *</label>
+          <input class="form-input" id="it-id" placeholder="e.g. BS, TW" style="text-transform:uppercase;font-size:0.85em;padding:9px 12px;border-radius:10px;" oninput="this.value=this.value.toUpperCase()"/>
+          <span style="font-size:0.72em;color:var(--text-muted);">Short unique code</span>
+        </div>
+        <div class="form-group" style="flex:2;min-width:160px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">ITEM NAME *</label>
+          <input class="form-input" id="it-name" placeholder="e.g. Bed Sheet" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Item Name *</label>
-        <input class="form-input" id="it-name" placeholder="e.g. Bed Sheet"/>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label" style="font-weight:700;font-size:0.78em;">DESCRIPTION</label>
+        <input class="form-input" id="it-desc" placeholder="Optional description" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
       </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label class="form-label">Description</label>
-        <input class="form-input" id="it-desc" placeholder="Optional description"/>
-      </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label class="form-label" style="font-weight:700;margin-bottom:10px;">Service Prices (LKR)</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-          <div>
-            <label class="form-label"><span class="badge badge-purple" style="font-size:0.75em;">Dry Clean</span></label>
-            <input type="number" class="form-input" id="it-dry-clean" placeholder="0.00" min="0" step="0.01"/>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label" style="font-weight:700;font-size:0.78em;margin-bottom:8px;">SERVICE PRICES (LKR)</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:90px;">
+            <label class="form-label" style="font-size:0.75em;"><span class="badge badge-purple" style="font-size:0.85em;">Dry Clean</span></label>
+            <input type="number" class="form-input" id="it-dry-clean" placeholder="0.00" min="0" step="0.01" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
           </div>
-          <div>
-            <label class="form-label"><span class="badge badge-cyan" style="font-size:0.75em;">Wash &amp; Press</span></label>
-            <input type="number" class="form-input" id="it-wash-press" placeholder="0.00" min="0" step="0.01"/>
+          <div style="flex:1;min-width:90px;">
+            <label class="form-label" style="font-size:0.75em;"><span class="badge badge-cyan" style="font-size:0.85em;">Wash &amp; Press</span></label>
+            <input type="number" class="form-input" id="it-wash-press" placeholder="0.00" min="0" step="0.01" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
           </div>
-          <div>
-            <label class="form-label"><span class="badge badge-green" style="font-size:0.75em;">Wash &amp; Dry</span></label>
-            <input type="number" class="form-input" id="it-wash-dry" placeholder="0.00" min="0" step="0.01"/>
+          <div style="flex:1;min-width:90px;">
+            <label class="form-label" style="font-size:0.75em;"><span class="badge badge-green" style="font-size:0.85em;">Wash &amp; Dry</span></label>
+            <input type="number" class="form-input" id="it-wash-dry" placeholder="0.00" min="0" step="0.01" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
           </div>
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-      <button class="btn btn-secondary" onclick="hideModal('add-item-modal')">Cancel [Esc]</button>
-      <button class="btn btn-primary" onclick="saveNewItem()"><i class="fas fa-save"></i> Save Item [Enter]</button>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:1px solid var(--border);">
+      <button class="btn btn-secondary btn-sm" onclick="hideModal('add-item-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveNewItem()" style="font-weight:700;padding:8px 14px;font-size:0.85em;"><i class="fas fa-save"></i> Save Item</button>
     </div>`);
   showModal('add-item-modal');
   setTimeout(()=>document.getElementById('it-id')?.focus(),80);
@@ -221,40 +214,42 @@ async function showEditItemModal(id) {
   if(!canEditItems()) return;
   const item = await DB.getItem(id); if(!item) return;
   createModal('edit-item-modal',`Edit Item: ${item.item_id}`,`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div class="form-group">
-        <label class="form-label">Item ID *</label>
-        <input class="form-input" id="eit-id" value="${item.item_id||''}" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:110px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">ITEM ID *</label>
+          <input class="form-input" id="eit-id" value="${item.item_id||''}" style="text-transform:uppercase;font-size:0.85em;padding:9px 12px;border-radius:10px;" oninput="this.value=this.value.toUpperCase()"/>
+        </div>
+        <div class="form-group" style="flex:2;min-width:160px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">ITEM NAME *</label>
+          <input class="form-input" id="eit-name" value="${item.item_name||''}" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Item Name *</label>
-        <input class="form-input" id="eit-name" value="${item.item_name||''}"/>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label" style="font-weight:700;font-size:0.78em;">DESCRIPTION</label>
+        <input class="form-input" id="eit-desc" value="${item.description||''}" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/>
       </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label class="form-label">Description</label>
-        <input class="form-input" id="eit-desc" value="${item.description||''}"/>
-      </div>
-      <div class="form-group" style="grid-column:1/-1;">
-        <label class="form-label" style="font-weight:700;margin-bottom:10px;">Service Prices (LKR)</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-          <div>
-            <label class="form-label"><span class="badge badge-purple" style="font-size:0.75em;">Dry Clean</span></label>
-            <input type="number" class="form-input" id="eit-dry-clean" value="${item.dry_clean_price||0}" min="0" step="0.01"/>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label" style="font-weight:700;font-size:0.78em;margin-bottom:8px;">SERVICE PRICES (LKR)</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:90px;">
+            <label class="form-label" style="font-size:0.75em;"><span class="badge badge-purple" style="font-size:0.85em;">Dry Clean</span></label>
+            <input type="number" class="form-input" id="eit-dry-clean" value="${item.dry_clean_price||0}" min="0" step="0.01" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
           </div>
-          <div>
-            <label class="form-label"><span class="badge badge-cyan" style="font-size:0.75em;">Wash &amp; Press</span></label>
-            <input type="number" class="form-input" id="eit-wash-press" value="${item.wash_press_price||0}" min="0" step="0.01"/>
+          <div style="flex:1;min-width:90px;">
+            <label class="form-label" style="font-size:0.75em;"><span class="badge badge-cyan" style="font-size:0.85em;">Wash &amp; Press</span></label>
+            <input type="number" class="form-input" id="eit-wash-press" value="${item.wash_press_price||0}" min="0" step="0.01" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
           </div>
-          <div>
-            <label class="form-label"><span class="badge badge-green" style="font-size:0.75em;">Wash &amp; Dry</span></label>
-            <input type="number" class="form-input" id="eit-wash-dry" value="${item.wash_dry_price||0}" min="0" step="0.01"/>
+          <div style="flex:1;min-width:90px;">
+            <label class="form-label" style="font-size:0.75em;"><span class="badge badge-green" style="font-size:0.85em;">Wash &amp; Dry</span></label>
+            <input type="number" class="form-input" id="eit-wash-dry" value="${item.wash_dry_price||0}" min="0" step="0.01" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
           </div>
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-      <button class="btn btn-secondary" onclick="hideModal('edit-item-modal')">Cancel [Esc]</button>
-      <button class="btn btn-primary" onclick="saveEditItem(${id})"><i class="fas fa-save"></i> Save [Enter]</button>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:1px solid var(--border);">
+      <button class="btn btn-secondary btn-sm" onclick="hideModal('edit-item-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEditItem(${id})" style="font-weight:700;padding:8px 14px;font-size:0.85em;"><i class="fas fa-save"></i> Save Item</button>
     </div>`);
   showModal('edit-item-modal');
   setTimeout(()=>document.getElementById('eit-id')?.focus(),80);
@@ -587,46 +582,52 @@ async function showGenerateQuotationModal() {
   const termsText = defaultTerms || "- Free pick-up and delivery for orders exceeding Rs 3,000.00\n- Contact instruction for pricing queries";
 
   createModal('gen-quotation-modal', 'Generate Service Quotation', `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
-      <div class="form-group">
-        <label class="form-label">Select Saved Customer</label>
-        <select class="form-input" id="gq-customer-id" onchange="onQuotationCustomerChange(this.value)">
-          ${custOptions}
-        </select>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:140px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">SAVED CUSTOMER</label>
+          <select class="form-input form-select" id="gq-customer-id" onchange="onQuotationCustomerChange(this.value)" style="font-size:0.85em;padding:8px 10px;border-radius:10px;">
+            ${custOptions}
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">CLIENT NAME *</label>
+          <input class="form-input" id="gq-client-name" value="" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Client Name * (Editable for Any Client)</label>
-        <input class="form-input" id="gq-client-name" value=""/>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:140px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">QUOTATION ID</label>
+          <input class="form-input" id="gq-quote-id" value="${initialQuoteId}" readonly style="background:var(--bg);cursor:not-allowed;font-family:monospace;font-weight:700;font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">ISSUED DATE *</label>
+          <input type="date" class="form-input" id="gq-date" value="${todayStr}" onchange="onQuotationDateChange(this.value)" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Quotation ID (Auto-generated)</label>
-        <input class="form-input" id="gq-quote-id" value="${initialQuoteId}" readonly style="background:var(--bg);cursor:not-allowed;font-family:monospace;font-weight:700;"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Issued Date *</label>
-        <input type="date" class="form-input" id="gq-date" value="${todayStr}" onchange="onQuotationDateChange(this.value)"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Valid Until *</label>
-        <input type="date" class="form-input" id="gq-valid-until" value="${validUntilStr}"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Issued By (Name &amp; Designation)</label>
-        <input class="form-input" id="gq-issued-by" value="Manager - Sagacious Washing Center"/>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:140px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">VALID UNTIL *</label>
+          <input type="date" class="form-input" id="gq-valid-until" value="${validUntilStr}" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px;margin:0;">
+          <label class="form-label" style="font-weight:700;font-size:0.78em;">ISSUED BY</label>
+          <input class="form-input" id="gq-issued-by" value="Manager - Sagacious Washing Center" style="font-size:0.85em;padding:8px 10px;border-radius:10px;"/>
+        </div>
       </div>
     </div>
 
     <!-- ITEMS & PRICING TABLE -->
-    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
         <div>
-          <label class="form-label" style="font-weight:700;font-size:0.95em;margin:0;">Item Prices &amp; Selection (LKR)</label>
-          <span style="font-size:0.78em;color:var(--text-muted);display:block;">Check/uncheck items or edit prices specifically for this quotation.</span>
+          <label class="form-label" style="font-weight:700;font-size:0.88em;margin:0;">Item Prices &amp; Selection (LKR)</label>
+          <span style="font-size:0.75em;color:var(--text-muted);display:block;">Check/uncheck items or edit prices for this quotation.</span>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="addCustomQuotationItemRow()"><i class="fas fa-plus"></i> Add Item Row</button>
+        <button class="btn btn-secondary btn-sm" onclick="addCustomQuotationItemRow()" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-plus"></i> Add Row</button>
       </div>
-      <div style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;">
-        <table style="width:100%;border-collapse:collapse;font-size:0.85em;">
+      <div style="max-height:260px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.85em;min-width:560px;">
           <thead style="position:sticky;top:0;background:var(--card-bg);z-index:2;box-shadow:0 1px 2px rgba(0,0,0,0.05);">
             <tr style="border-bottom:1px solid var(--border);background:var(--bg);">
               <th style="padding:8px;text-align:center;width:40px;">No.</th>
@@ -646,14 +647,14 @@ async function showGenerateQuotationModal() {
     </div>
 
     <!-- FOOTER NOTES EDITOR -->
-    <div style="margin-top:16px;">
-      <label class="form-label">Footer Notes &amp; Terms (Editable per quotation)</label>
-      <textarea class="form-input" id="gq-footer-notes" rows="3" style="font-family:inherit;font-size:0.88em;">${termsText}</textarea>
+    <div style="margin-top:14px;">
+      <label class="form-label" style="font-weight:700;font-size:0.78em;">FOOTER NOTES &amp; TERMS</label>
+      <textarea class="form-input" id="gq-footer-notes" rows="3" style="font-family:inherit;font-size:0.85em;padding:9px 12px;border-radius:10px;">${termsText}</textarea>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:14px;border-top:1px solid var(--border);">
-      <button class="btn btn-secondary" onclick="hideModal('gen-quotation-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="processGenerateQuotation()"><i class="fas fa-file-invoice"></i> Save &amp; Preview Quotation</button>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid var(--border);">
+      <button class="btn btn-secondary btn-sm" onclick="hideModal('gen-quotation-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="processGenerateQuotation()" style="font-weight:700;padding:8px 14px;font-size:0.85em;"><i class="fas fa-file-invoice"></i> Save &amp; Preview Quotation</button>
     </div>
   `, 'modal-xl');
   showModal('gen-quotation-modal');

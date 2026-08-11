@@ -1,7 +1,14 @@
-The Drivers Tab,
-Change the search bar into search icon as in Dashboard
+In the Items Tab,
+Change the whole Buttons into mobile view 
+Generate Quotation 
+Terms and Conditions
+Import Button
+Backup Button
 
-make all the buttons backup, import, Add Driver optimized for mobile screen.
+Search bar should be same as in the dashboard search icon and function
 
-in Add Driver dialogbox open when touch on Add Driver,
-Also optimize for mobile screen view
+-Remove Print Catalogue button only from UI
+
+The dialogbox opens when click on Add New Button
+make the input textboxes in proper order in mobile view
+
