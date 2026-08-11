@@ -22,9 +22,9 @@ async function renderOrders() {
   const custOpts   = customers.map(c=>`<option value="${c.id}" ${String(c.id)===ordersCustFilter?'selected':''}>${c.hotel_name}</option>`).join('');
 
   document.getElementById('content').innerHTML = `
-    <div class="section-header">
+    <div class="section-header" style="padding-right:6px;margin-bottom:14px;">
       <span class="section-title">Orders</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-right:4px;">
         <button class="btn btn-secondary btn-sm btn-icon" onclick="openGlobalSearchModal()" title="Search Orders [Ctrl+K]">
           <i class="fas fa-search"></i>
         </button>
