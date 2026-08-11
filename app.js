@@ -549,7 +549,6 @@ async function _refreshCustomersTable() {
         <td>${c.email||'—'}</td>
         <td>${formatDate(c.created_date)}</td>
         <td><div style="display:flex;gap:5px;">
-          <button class="btn btn-sm" onclick="showCustomerProfileModal(${c.id})" title="Profile & Custom Prices" style="background:#8b5cf6; border-color:#7c3aed; color:#fff;"><i class="fas fa-tags"></i></button>
           <button class="btn btn-primary btn-sm" onclick="showEditCustomerModal(${c.id})"><i class="fas fa-edit"></i></button>
           <button class="btn btn-secondary btn-sm" onclick="viewCustomerOrders(${c.id})"><i class="fas fa-boxes-stacked"></i></button>
           ${isAdmin() ? `<button class="btn btn-success btn-sm" onclick="printCustomerSalesSummary(${c.id})" style="background:#10b981; border-color:#10b981; font-weight:600;"><i class="fas fa-file-pdf"></i> SUMMARY</button>` : ''}
@@ -575,7 +574,6 @@ async function _refreshCustomersTable() {
             <div class="mobile-card-kv"><span class="mobile-card-label">Joined</span><span class="mobile-card-value">${formatDate(c.created_date)}</span></div>
           </div>
           <div class="mobile-card-actions">
-            <button class="btn btn-sm" onclick="showCustomerProfileModal(${c.id})" style="background:#8b5cf6; border-color:#7c3aed; color:#fff;"><i class="fas fa-tags"></i> Profile</button>
             <button class="btn btn-primary btn-sm" onclick="showEditCustomerModal(${c.id})"><i class="fas fa-edit"></i> Edit</button>
             <button class="btn btn-secondary btn-sm" onclick="viewCustomerOrders(${c.id})"><i class="fas fa-boxes-stacked"></i> Orders</button>
             ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomerConfirm(${c.id})"><i class="fas fa-trash"></i></button>` : ''}
@@ -590,21 +588,23 @@ function changeCustPage(p) { custPage=p; _refreshCustomersTable(); }
 
 function showAddCustomerModal() {
   createModal('add-cust-modal','Add Hotel Customer',`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Hotel Name *</label>
-        <input class="form-input" id="c-hotel" placeholder="Grand Hotel Colombo" maxlength="100"/></div>
-      <div class="form-group"><label class="form-label">Contact Person</label>
-        <input class="form-input" id="c-contact" placeholder="Mr. Perera" maxlength="80"/></div>
-      <div class="form-group"><label class="form-label">Phone <span style="color:var(--text-muted);font-size:0.82em;">(10 digits)</span></label>
-        <input class="form-input" id="c-phone" placeholder="0771234567" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"/></div>
-      <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Address</label>
-        <input class="form-input" id="c-address" placeholder="123 Galle Road, Colombo 03" maxlength="200"/></div>
-      <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Email</label>
-        <input class="form-input" id="c-email" type="email" placeholder="laundry@hotel.lk" maxlength="100"/></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="form-group"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">HOTEL NAME *</label>
+        <input class="form-input" id="c-hotel" placeholder="Grand Hotel Colombo" maxlength="100" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
+      <div style="display:flex;gap:10px;">
+        <div class="form-group" style="flex:1;min-width:0;"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">CONTACT PERSON</label>
+          <input class="form-input" id="c-contact" placeholder="Mr. Perera" maxlength="80" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
+        <div class="form-group" style="flex:1;min-width:0;"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">PHONE <span style="color:var(--text-muted);font-size:0.85em;">(10 digits)</span></label>
+          <input class="form-input" id="c-phone" placeholder="0771234567" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,10)" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
+      </div>
+      <div class="form-group"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">ADDRESS</label>
+        <input class="form-input" id="c-address" placeholder="123 Galle Road, Colombo 03" maxlength="200" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
+      <div class="form-group"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">EMAIL</label>
+        <input class="form-input" id="c-email" type="email" placeholder="laundry@hotel.lk" maxlength="100" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
-      <button class="btn btn-secondary" onclick="hideModal('add-cust-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveNewCustomer()"><i class="fas fa-save"></i> Save</button>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+      <button class="btn btn-secondary btn-sm" onclick="hideModal('add-cust-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveNewCustomer()" style="font-weight:700;"><i class="fas fa-save"></i> Save Customer</button>
     </div>`);
   showModal('add-cust-modal');
 }
@@ -633,21 +633,23 @@ async function saveNewCustomer() {
 async function showEditCustomerModal(id) {
   const c = await DB.getCustomer(id); if(!c) return;
   createModal('edit-cust-modal','Edit Customer',`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-      <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Hotel Name *</label>
-        <input class="form-input" id="ec-hotel" value="${c.hotel_name||''}" maxlength="100"/></div>
-      <div class="form-group"><label class="form-label">Contact Person</label>
-        <input class="form-input" id="ec-contact" value="${c.contact_person||''}" maxlength="80"/></div>
-      <div class="form-group"><label class="form-label">Phone <span style="color:var(--text-muted);font-size:0.82em;">(10 digits)</span></label>
-        <input class="form-input" id="ec-phone" value="${c.phone||''}" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"/></div>
-      <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Address</label>
-        <input class="form-input" id="ec-address" value="${c.address||''}" maxlength="200"/></div>
-      <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Email</label>
-        <input class="form-input" id="ec-email" value="${c.email||''}" maxlength="100"/></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="form-group"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">HOTEL NAME *</label>
+        <input class="form-input" id="ec-hotel" value="${c.hotel_name||''}" maxlength="100" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
+      <div style="display:flex;gap:10px;">
+        <div class="form-group" style="flex:1;min-width:0;"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">CONTACT PERSON</label>
+          <input class="form-input" id="ec-contact" value="${c.contact_person||''}" maxlength="80" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
+        <div class="form-group" style="flex:1;min-width:0;"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">PHONE <span style="color:var(--text-muted);font-size:0.85em;">(10 digits)</span></label>
+          <input class="form-input" id="ec-phone" value="${c.phone||''}" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,10)" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
+      </div>
+      <div class="form-group"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">ADDRESS</label>
+        <input class="form-input" id="ec-address" value="${c.address||''}" maxlength="200" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
+      <div class="form-group"><label class="form-label" style="font-size:0.78em;font-weight:700;letter-spacing:0.5px;">EMAIL</label>
+        <input class="form-input" id="ec-email" value="${c.email||''}" maxlength="100" style="font-size:0.85em;padding:9px 12px;border-radius:10px;"/></div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
-      <button class="btn btn-secondary" onclick="hideModal('edit-cust-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEditCustomer(${id})"><i class="fas fa-save"></i> Save</button>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+      <button class="btn btn-secondary btn-sm" onclick="hideModal('edit-cust-modal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEditCustomer(${id})" style="font-weight:700;"><i class="fas fa-save"></i> Save Changes</button>
     </div>`);
   showModal('edit-cust-modal');
 }
@@ -712,20 +714,21 @@ async function deleteCustomerConfirm(id) {
   });
 }
 async function viewCustomerOrders(customerId) {
-  const [customer, orders] = await Promise.all([DB.getCustomer(customerId), DB.getOrdersByCustomer(customerId)]);
-  createModal('cust-orders-modal',`Orders: ${customer?.hotel_name}`,`
-    <div class="table-wrap"><table>
-      <thead><tr><th>Batch ID</th><th>Status</th><th>Total</th><th>Date</th><th></th></tr></thead>
-      <tbody>
-        ${orders.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(o=>`<tr>
-          <td><strong>${o.batch_id}</strong></td><td>${statusBadge(o.status)}</td>
-          <td>${formatCurrency(o.total_amount)}</td><td>${formatDate(o.created_at)}</td>
-          <td><button class="btn btn-primary btn-sm" onclick="hideModal('cust-orders-modal');navigate('orders');setTimeout(()=>viewOrderDetails(${o.id}),200)"><i class="fas fa-eye"></i></button></td>
-        </tr>`).join('')||`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No orders</td></tr>`}
-      </tbody>
-    </table></div>
-    <div style="margin-top:12px;text-align:right;"><button class="btn btn-secondary" onclick="hideModal('cust-orders-modal')">Close</button></div>`);
-  showModal('cust-orders-modal');
+  const customer = await DB.getCustomer(customerId);
+  ordersCustFilter = String(customerId);
+  ordersPage = 1;
+  ordersSearch = '';
+  ordersStatusFilter = '';
+  ordersDriverFilter = '';
+  
+  const contentEl = document.getElementById('content');
+  if (contentEl) contentEl.innerHTML = '';
+  await navigate('orders');
+  
+  const filterPanel = document.getElementById('orders-filter-panel');
+  if (filterPanel) filterPanel.style.display = 'grid';
+  
+  toast(`Showing orders for "${customer ? customer.hotel_name : 'Customer #' + customerId}"`);
 }
 
 async function printCustomerSalesSummary(customerId) {
