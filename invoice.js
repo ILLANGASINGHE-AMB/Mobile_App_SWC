@@ -1581,14 +1581,21 @@ async function renderDeductions() {
   document.getElementById('page-title').textContent = 'Deductions';
   
   document.getElementById('content').innerHTML = `
-    <div class="section-header">
+    <div class="section-header" style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
       <span class="section-title">Deductions Register</span>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="openGlobalSearchModal()" title="Search Deductions [Ctrl+K]">
+        <i class="fas fa-search"></i>
+      </button>
     </div>
 
     <!-- Summary Cards -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-bottom:20px;">
-      ${renderInvStatCard("Total Deductions Applied", "0", "fa-scissors", "#ef4444", "#fee2e2", "Count of deduction entries", "deduct-card-count")}
-      ${renderInvStatCard("Total Deducted Value", "LKR 0.00", "fa-calculator", "#ea580c", "#ffedd5", "Sum of all deduction amounts", "deduct-card-total")}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+      <div style="flex:1;min-width:140px;">
+        ${renderInvStatCard("Total Deductions", "0", "fa-scissors", "#ef4444", "#fee2e2", "Deduction entries", "deduct-card-count")}
+      </div>
+      <div style="flex:1;min-width:140px;">
+        ${renderInvStatCard("Total Deducted Value", "LKR 0.00", "fa-calculator", "#ea580c", "#ffedd5", "Sum of deductions", "deduct-card-total")}
+      </div>
     </div>
 
     <!-- Table Container -->
@@ -1681,19 +1688,23 @@ async function _refreshDeductionsTable() {
         const customerName = order ? getOrderCustomerName(order, cMap) : '—';
         return `
           <div class="mobile-card">
-            <div class="mobile-card-top">
-              <div class="mobile-card-title">${d.invoice_number || '—'}</div>
-              <span class="badge badge-red">Deduction</span>
+            <div class="mobile-card-top" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+              <span class="mobile-card-title" style="font-size:0.92em;font-weight:700;">${d.invoice_number || '—'}</span>
+              <span class="badge badge-red" style="font-size:0.75em;">Deduction</span>
             </div>
-            <div class="mobile-card-grid">
+            <div class="mobile-card-grid" style="font-size:0.84em;gap:6px;margin-top:8px;">
               <div class="mobile-card-kv"><span class="mobile-card-label">Customer</span><span class="mobile-card-value">${customerName}</span></div>
               <div class="mobile-card-kv"><span class="mobile-card-label">Date</span><span class="mobile-card-value">${formatDate(d.created_at)}</span></div>
               <div class="mobile-card-kv"><span class="mobile-card-label">Original Total</span><span class="mobile-card-value">${formatCurrency(d.original_amount)}</span></div>
-              <div class="mobile-card-kv"><span class="mobile-card-label">Deducted</span><span class="mobile-card-value" style="color:var(--danger);">${formatCurrency(d.deduction_amount)}</span></div>
+              <div class="mobile-card-kv"><span class="mobile-card-label">Deducted</span><span class="mobile-card-value" style="color:var(--danger);font-weight:700;">-${formatCurrency(d.deduction_amount)}</span></div>
+              <div class="mobile-card-kv"><span class="mobile-card-label">Final Paid</span><span class="mobile-card-value" style="color:var(--success);font-weight:700;">${formatCurrency(d.final_amount)}</span></div>
             </div>
-            <div style="font-size:0.82em;color:var(--text-muted);margin:6px 0;">Reason: ${d.reason || 'N/A'}</div>
-            <div class="mobile-card-actions">
-              ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteDeductionConfirm(${d.id}, ${d.invoice_id}, ${d.deduction_amount})"><i class="fas fa-trash"></i> Delete</button>` : ''}
+            <div style="font-size:0.82em;color:var(--text-muted);margin:8px 0 6px;padding:6px 8px;background:var(--bg);border-radius:6px;">
+              <strong>Reason:</strong> ${d.reason || 'N/A'}
+            </div>
+            <div class="mobile-card-actions" style="margin-top:8px;display:flex;gap:6px;">
+              <button class="btn btn-secondary btn-sm" onclick="printInvoice(${d.invoice_id})" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-print"></i> Print</button>
+              ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteDeductionConfirm(${d.id}, ${d.invoice_id}, ${d.deduction_amount})" style="padding:6px 12px;font-size:0.82em;"><i class="fas fa-trash"></i> Delete</button>` : ''}
             </div>
           </div>`;
       }).join('');
