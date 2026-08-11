@@ -73,7 +73,7 @@ function isDriver() { return currentUser && currentUser.role === 'driver'; }
 
 function getRoleAllowedPages() {
   if (isAdmin()) {
-    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'invoices', 'deductions', 'items', 'expenses', 'analytics', 'reports', 'recent-actions', 'settings'];
+    return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'deductions', 'items', 'expenses', 'reports', 'recent-actions', 'settings'];
   }
   if (isStaffUser()) {
     return ['dashboard', 'orders', 'customers', 'drivers', 'transport', 'paynow', 'deductions', 'items', 'expenses', 'settings'];
@@ -309,7 +309,7 @@ async function renderDashboard() {
     <div class="card" style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div style="font-weight:700;font-family:'Playfair Display',serif;font-size:1.1em;"><i class="fas fa-file-invoice" style="color:var(--primary);margin-right:8px;"></i>Unpaid Invoices</div>
-        <button class="btn btn-secondary btn-sm" onclick="navigate('invoices')">View All <i class="fas fa-arrow-right"></i></button>
+        <button class="btn btn-secondary btn-sm" onclick="navigate('paynow')">Pay Now <i class="fas fa-arrow-right"></i></button>
       </div>
       <div id="unpaid-invoices-table"></div>
     </div>`;

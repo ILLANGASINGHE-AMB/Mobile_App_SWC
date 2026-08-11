@@ -183,7 +183,7 @@ async function runGlobalSearch(immediate = false) {
           title: inv.invoice_number,
           subtitle: `${custName || 'Customer'} • Amount: LKR ${(inv.total_amount || 0).toLocaleString()}`,
           badge: inv.paid_status || 'Unpaid',
-          action: () => { closeGsDropdown(); navigate('invoices'); setTimeout(() => viewInvoice(inv.id), 200); }
+          action: () => { closeGsDropdown(); navigate('paynow'); setTimeout(() => viewInvoice(inv.id), 200); }
         });
       }
     });
@@ -308,10 +308,10 @@ document.addEventListener('keydown', e => {
   switch(e.key) {
     // Navigation — Alt + letter
     case 'd': if(e.altKey){e.preventDefault();navigate('dashboard');} break;
-    case 'a': if(e.altKey){e.preventDefault();navigate('analytics');} break;
+    case 'a': if(e.altKey){e.preventDefault();navigate('dashboard');} break;
     case 'o': if(e.altKey){e.preventDefault();navigate('orders');} break;
-    case 'i': if(e.altKey){e.preventDefault();navigate('invoices');} break;
-    case 'p': if(e.altKey){e.preventDefault();navigate('invoices');} break;
+    case 'i': if(e.altKey){e.preventDefault();navigate('paynow');} break;
+    case 'p': if(e.altKey){e.preventDefault();navigate('paynow');} break;
     case 'c': if(e.altKey){e.preventDefault();navigate('customers');} break;
     case 'r': if(e.altKey){e.preventDefault();navigate('drivers');} break;
     case 'm': if(e.altKey){e.preventDefault();navigate('items');} break;

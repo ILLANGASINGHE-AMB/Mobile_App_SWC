@@ -163,11 +163,9 @@ const ALL_NAV_ITEMS = {
   customers:      { label: 'Customers', icon: 'fa-users' },
   drivers:        { label: 'Drivers',   icon: 'fa-truck' },
   paynow:         { label: 'Pay Now',   icon: 'fa-money-bill-wave' },
-  invoices:       { label: 'Invoices',  icon: 'fa-file-invoice' },
   deductions:     { label: 'Deductions',icon: 'fa-scissors' },
   items:          { label: 'Items',     icon: 'fa-list-check' },
   expenses:       { label: 'Expenses',  icon: 'fa-receipt' },
-  analytics:      { label: 'Analytics', icon: 'fa-chart-line' },
   reports:        { label: 'Reports',   icon: 'fa-chart-bar' },
   'recent-actions':{ label: 'Actions',  icon: 'fa-history' },
   settings:       { label: 'Settings',  icon: 'fa-cog' }
@@ -184,7 +182,7 @@ function renderBottomNav(role = 'admin') {
     primaryKeys = ['dashboard', 'orders', 'transport', 'paynow'];
   } else {
     // admin
-    primaryKeys = ['dashboard', 'orders', 'transport', 'analytics'];
+    primaryKeys = ['dashboard', 'orders', 'transport', 'paynow'];
   }
 
   const allowedPages = typeof getRoleAllowedPages === 'function' ? getRoleAllowedPages() : Object.keys(ALL_NAV_ITEMS);
