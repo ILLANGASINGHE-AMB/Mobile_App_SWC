@@ -546,26 +546,26 @@ async function showAddOrderModal() {
       </div>
 
       <!-- Line 2: Pickup Date | Delivery Date -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;box-sizing:border-box;">
-        <div class="form-group" style="margin:0;min-width:0;overflow:hidden;">
+      <div style="display:flex;gap:12px;width:100%;box-sizing:border-box;">
+        <div class="form-group" style="flex:1;min-width:0;margin:0;">
           <label class="form-label" style="font-weight:700;font-size:0.75em;letter-spacing:0.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">Pickup Date</label>
-          <input type="date" class="form-input" id="ao-pickup" value="${today()}" style="width:100%;min-width:0;box-sizing:border-box;font-size:0.84em;padding:8px;"/>
+          <input type="date" class="form-input" id="ao-pickup" value="${today()}" style="width:100%;min-width:0;box-sizing:border-box;font-size:0.85em;padding:10px 12px;border-radius:12px;"/>
         </div>
-        <div class="form-group" style="margin:0;min-width:0;overflow:hidden;">
+        <div class="form-group" style="flex:1;min-width:0;margin:0;">
           <label class="form-label" style="font-weight:700;font-size:0.75em;letter-spacing:0.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">Delivery Date</label>
-          <input type="date" class="form-input" id="ao-delivery" style="width:100%;min-width:0;box-sizing:border-box;font-size:0.84em;padding:8px;"/>
+          <input type="date" class="form-input" id="ao-delivery" style="width:100%;min-width:0;box-sizing:border-box;font-size:0.85em;padding:10px 12px;border-radius:12px;"/>
         </div>
       </div>
 
       <!-- Line 3: Advanced Payment | Extra Payments -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;box-sizing:border-box;">
-        <div class="form-group" style="margin:0;min-width:0;overflow:hidden;">
+      <div style="display:flex;gap:12px;width:100%;box-sizing:border-box;">
+        <div class="form-group" style="flex:1;min-width:0;margin:0;">
           <label class="form-label" style="font-weight:700;font-size:0.75em;letter-spacing:0.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">Advance Payment (LKR)</label>
-          <input type="number" class="form-input" id="ao-advance" value="0" min="0" oninput="calcOrderTotal()" style="width:100%;min-width:0;box-sizing:border-box;"/>
+          <input type="number" class="form-input" id="ao-advance" value="0" min="0" oninput="calcOrderTotal()" style="width:100%;min-width:0;box-sizing:border-box;font-size:0.85em;padding:10px 12px;border-radius:12px;"/>
         </div>
-        <div class="form-group" style="margin:0;min-width:0;overflow:hidden;">
+        <div class="form-group" style="flex:1;min-width:0;margin:0;">
           <label class="form-label" style="font-weight:700;font-size:0.75em;letter-spacing:0.5px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;display:block;">Extra Payments (LKR)</label>
-          <input type="number" class="form-input" id="ao-extra-payment" value="0" min="0" oninput="calcOrderTotal()" style="width:100%;min-width:0;box-sizing:border-box;"/>
+          <input type="number" class="form-input" id="ao-extra-payment" value="0" min="0" oninput="calcOrderTotal()" style="width:100%;min-width:0;box-sizing:border-box;font-size:0.85em;padding:10px 12px;border-radius:12px;"/>
         </div>
       </div>
 
