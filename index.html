@@ -674,11 +674,18 @@
       }
       .modal input[type="date"], .modal input[type="number"], .modal .form-input, .modal select {
         min-width: 0 !important;
+        max-width: 100% !important;
         box-sizing: border-box !important;
       }
       .modal input[type="date"] {
-        padding: 8px 6px !important;
+        padding: 8px 8px !important;
         font-size: 0.84em !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+      }
+      .modal input[type="date"]::-webkit-date-and-time-value {
+        text-align: left;
+        min-height: 1.2em;
       }
       @keyframes slideUpModal {
         from { transform: translateY(100%); }
