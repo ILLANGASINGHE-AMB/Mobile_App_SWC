@@ -51,92 +51,208 @@ function reportWrapper(title, content, exportFn) {
 // DAILY ORDERS
 // ─────────────────────────────────────────────
 async function generateDailyOrdersReport() {
-  const todayStr = today();
-  const [orders, customers] = await Promise.all([DB.getOrders(), DB.getCustomers()]);
-  const cMap = Object.fromEntries(customers.map(c=>[c.id,c]));
-  const todayOrders = orders.filter(o=>(o.pickup_date||'').startsWith(todayStr)||(o.created_at||'').startsWith(todayStr));
-  window._reportData = todayOrders;
+  showProcessingOverlay('Generating Report', 'Preparing Daily Orders PDF report...');
+  try {
+    const todayStr = today();
+    const [orders, customers] = await Promise.all([DB.getOrders(), DB.getCustomers()]);
+    const cMap = Object.fromEntries(customers.map(c=>[c.id,c]));
+    const todayOrders = orders.filter(o=>(o.pickup_date||'').startsWith(todayStr)||(o.created_at||'').startsWith(todayStr));
+    const total = todayOrders.reduce((s,o)=>s+(o.total_amount||0),0);
+    const totalAdvance = todayOrders.reduce((s,o)=>s+(o.advance_payment||0),0);
 
-  const rows = todayOrders.map(o=>`<tr>
-    <td>${o.batch_id||'—'}</td>
-    <td>${getOrderCustomerName(o, cMap)}</td>
-    <td>${statusBadge(o.status)}</td>
-    <td>${formatCurrency(o.total_amount)}</td>
-    <td>${formatCurrency(o.advance_payment)}</td>
-  </tr>`).join('')||`<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No orders today</td></tr>`;
-  const total = todayOrders.reduce((s,o)=>s+(o.total_amount||0),0);
+    const settings = {
+      company_name: await DB.getSetting('company_name') || 'Sagacious Washing Center',
+      address:      await DB.getSetting('address') || '',
+      phone:        await DB.getSetting('phone') || '',
+      email:        await DB.getSetting('email') || ''
+    };
+    const logoData = await DB.getSetting('logo_data');
+    const logoHTML = logoData
+      ? `<img src="${logoData}" style="height:56px;width:56px;object-fit:cover;border-radius:10px;"/>`
+      : `<div style="height:56px;width:56px;border-radius:10px;background:linear-gradient(135deg,#00b4d8,#1a4d8f);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.4em;">SW</div>`;
 
-  document.getElementById('report-output').innerHTML = reportWrapper(`Daily Orders — ${todayDisplay()}`,
-    `<div class="table-wrap"><table>
-      <thead><tr><th>Batch ID</th><th>Customer</th><th>Status</th><th>Total</th><th>Advance</th></tr></thead>
-      <tbody>${rows}</tbody>
-      <tfoot><tr><td colspan="3" style="font-weight:700;padding:12px 16px;text-align:right;">Total Revenue</td>
-        <td colspan="2" style="font-weight:700;padding:12px 16px;">${formatCurrency(total)}</td></tr></tfoot>
-    </table></div>`, 'exportDailyOrders');
+    const rows = todayOrders.map(o=>`<tr>
+      <td style="padding:8px 10px;font-family:monospace;font-weight:700;">${o.batch_id||'—'}</td>
+      <td style="padding:8px 10px;">${getOrderCustomerName(o, cMap)}</td>
+      <td style="padding:8px 10px;">${o.status||'—'}</td>
+      <td style="padding:8px 10px;text-align:right;color:#16a34a;">${formatCurrency(o.advance_payment||0)}</td>
+      <td style="padding:8px 10px;text-align:right;font-weight:700;">${formatCurrency(o.total_amount||0)}</td>
+    </tr>`).join('')||`<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;">No orders today</td></tr>`;
+
+    const printHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+      <title>Daily Orders — ${todayDisplay()}</title>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;font-size:11px;}
+        @media print{body{margin:0;}.no-print{display:none !important;}@page{size:A4 portrait;margin:14mm 12mm;}}
+        table{width:100%;border-collapse:collapse;}
+        th{background:#1a4d8f;color:#fff;padding:8px 10px;text-align:left;font-size:0.8em;text-transform:uppercase;}
+        td{border-bottom:1px solid #e2e8f0;padding:8px 10px;}
+      </style></head><body>
+      <div class="no-print" style="position:sticky;top:0;left:0;right:0;background:#0f172a;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-family:sans-serif;">
+        <div style="font-weight:700;font-size:0.95em;">📄 Daily Orders PDF Report Preview &mdash; ${todayDisplay()}</div>
+        <button onclick="window.print()" style="background:#0d9488;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-weight:700;font-size:0.85em;cursor:pointer;">Print / Save PDF</button>
+      </div>
+      <div style="max-width:800px;margin:0 auto;padding:24px 28px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #1a4d8f;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            ${logoHTML}
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:1.4em;font-weight:700;color:#1a4d8f;">${settings.company_name}</div>
+              <div style="color:#64748b;font-size:0.85em;">${settings.address||''} ${settings.phone ? '&bull; ' + settings.phone : ''}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Playfair Display',serif;font-size:1.25em;font-weight:700;color:#1a4d8f;">DAILY ORDERS REPORT</div>
+            <div style="font-size:0.88em;color:#64748b;font-weight:600;">${todayDisplay()}</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Batch ID</th>
+              <th>Customer</th>
+              <th>Status</th>
+              <th style="text-align:right;">Advance</th>
+              <th style="text-align:right;">Total Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+            <tr style="font-weight:700;background:#f8fafc;">
+              <td colspan="3" style="text-align:right;padding:12px 10px;">Total Revenue</td>
+              <td style="text-align:right;padding:12px 10px;color:#16a34a;">${formatCurrency(totalAdvance)}</td>
+              <td style="text-align:right;padding:12px 10px;color:#1a4d8f;font-size:1.1em;">${formatCurrency(total)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      </body></html>`;
+
+    const w = window.open('', '_blank');
+    if (!w) return toast('Please allow pop-ups to view PDF report', 'warning');
+    w.document.write(printHTML);
+    w.document.close();
+  } catch (err) {
+    toast('Error generating report: ' + (err.message || err), 'error');
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 function exportDailyOrders(type) {
   exportData((window._reportData||[]).map(o=>({'Batch ID':o.batch_id,'Status':o.status,'Total':o.total_amount,'Advance':o.advance_payment})),'daily_orders',type);
 }
 
 // ─────────────────────────────────────────────
-// MONTHLY REVENUE
-// ─────────────────────────────────────────────
-async function generateMonthlyRevenueReport() {
-  const payments = await DB.getPayments();
-  const monthMap = {};
-  payments.forEach(p=>{
-    const month=(p.date||'').slice(0,7); if(!month)return;
-    monthMap[month]=(monthMap[month]||0)+p.amount;
-  });
-  const sorted = Object.entries(monthMap).sort((a,b)=>a[0].localeCompare(b[0]));
-  window._reportData = sorted.map(([m,a])=>({Month:m,Revenue:a}));
-
-  const rows = sorted.map(([m,a])=>`<tr><td>${m}</td><td><strong>${formatCurrency(a)}</strong></td></tr>`).join('')
-    || `<tr><td colspan="2" style="text-align:center;color:var(--text-muted);">No data</td></tr>`;
-  const grandTotal = sorted.reduce((s,[,a])=>s+a,0);
-
-  document.getElementById('report-output').innerHTML = reportWrapper('Monthly Revenue Report',
-    `<div class="table-wrap"><table>
-      <thead><tr><th>Month</th><th>Revenue (LKR)</th></tr></thead>
-      <tbody>${rows}</tbody>
-      <tfoot><tr><td style="font-weight:700;padding:12px 16px;">Grand Total</td><td style="font-weight:700;padding:12px 16px;">${formatCurrency(grandTotal)}</td></tr></tfoot>
-    </table></div>`, 'exportMonthlyRevenue');
-}
-function exportMonthlyRevenue(type) { exportData(window._reportData||[],'monthly_revenue',type); }
-
-// ─────────────────────────────────────────────
 // CUSTOMER BILLING
 // ─────────────────────────────────────────────
 async function generateCustomerBillingReport() {
-  const [orders,customers,invoices,payments] = await Promise.all([DB.getOrders(),DB.getCustomers(),DB.getInvoices(),DB.getPayments()]);
-  const invMap = Object.fromEntries(invoices.map(i=>[i.order_id,i]));
-  const payMap = {};
-  payments.forEach(p=>{ payMap[p.invoice_id]=(payMap[p.invoice_id]||0)+p.amount; });
+  showProcessingOverlay('Generating Report', 'Preparing Customer Billing PDF report...');
+  try {
+    const [orders,customers,invoices,payments] = await Promise.all([DB.getOrders(),DB.getCustomers(),DB.getInvoices(),DB.getPayments()]);
+    const invMap = Object.fromEntries(invoices.map(i=>[i.order_id,i]));
+    const payMap = {};
+    payments.forEach(p=>{ payMap[p.invoice_id]=(payMap[p.invoice_id]||0)+p.amount; });
 
-  const custSummary = {};
-  customers.forEach(c=>{ custSummary[c.id]={name:c.hotel_name,total:0,paid:0,balance:0,orders:0}; });
-  orders.forEach(o=>{
-    if(!custSummary[o.customer_id])return;
-    custSummary[o.customer_id].orders++;
-    custSummary[o.customer_id].total+=o.total_amount||0;
-    const inv=invMap[o.id];
-    if(inv){ const paid=(payMap[inv.id]||0)+(inv.advance_payment||0); custSummary[o.customer_id].paid+=paid; }
-  });
-  Object.values(custSummary).forEach(s=>{s.balance=s.total-s.paid;});
+    const custSummary = {};
+    customers.forEach(c=>{ custSummary[c.id]={name:c.hotel_name,total:0,paid:0,balance:0,orders:0}; });
+    orders.forEach(o=>{
+      if(!custSummary[o.customer_id])return;
+      custSummary[o.customer_id].orders++;
+      custSummary[o.customer_id].total+=o.total_amount||0;
+      const inv=invMap[o.id];
+      if(inv){ const paid=(payMap[inv.id]||0)+(inv.advance_payment||0); custSummary[o.customer_id].paid+=paid; }
+    });
+    Object.values(custSummary).forEach(s=>{s.balance=s.total-s.paid;});
 
-  const rows = Object.values(custSummary).map(s=>`<tr>
-    <td>${s.name}</td><td>${s.orders}</td>
-    <td>${formatCurrency(s.total)}</td>
-    <td style="color:var(--success);">${formatCurrency(s.paid)}</td>
-    <td style="color:${s.balance>0?'var(--danger)':'var(--success)'};">${formatCurrency(Math.max(0,s.balance))}</td>
-  </tr>`).join('');
+    const settings = {
+      company_name: await DB.getSetting('company_name') || 'Sagacious Washing Center',
+      address:      await DB.getSetting('address') || '',
+      phone:        await DB.getSetting('phone') || '',
+      email:        await DB.getSetting('email') || ''
+    };
+    const logoData = await DB.getSetting('logo_data');
+    const logoHTML = logoData
+      ? `<img src="${logoData}" style="height:56px;width:56px;object-fit:cover;border-radius:10px;"/>`
+      : `<div style="height:56px;width:56px;border-radius:10px;background:linear-gradient(135deg,#00b4d8,#1a4d8f);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.4em;">SW</div>`;
 
-  window._reportData = Object.values(custSummary).map(s=>({Customer:s.name,Orders:s.orders,Total:s.total,Paid:s.paid,Balance:Math.max(0,s.balance)}));
-  document.getElementById('report-output').innerHTML = reportWrapper('Customer Billing Summary',
-    `<div class="table-wrap"><table>
-      <thead><tr><th>Customer</th><th>Orders</th><th>Total Billed</th><th>Paid</th><th>Balance</th></tr></thead>
-      <tbody>${rows||`<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">No data</td></tr>`}</tbody>
-    </table></div>`, 'exportCustomerBilling');
+    const summaryList = Object.values(custSummary);
+    const grandTotal = summaryList.reduce((s,c)=>s+c.total,0);
+    const grandPaid = summaryList.reduce((s,c)=>s+c.paid,0);
+    const grandBalance = summaryList.reduce((s,c)=>s+Math.max(0,c.balance),0);
+
+    const rows = summaryList.map(s=>`<tr>
+      <td style="padding:8px 10px;font-weight:700;">${s.name}</td>
+      <td style="padding:8px 10px;text-align:center;">${s.orders}</td>
+      <td style="padding:8px 10px;text-align:right;">${formatCurrency(s.total)}</td>
+      <td style="padding:8px 10px;text-align:right;color:#16a34a;">${formatCurrency(s.paid)}</td>
+      <td style="padding:8px 10px;text-align:right;font-weight:700;color:${s.balance>0?'#ef4444':'#16a34a'};">${formatCurrency(Math.max(0,s.balance))}</td>
+    </tr>`).join('')||`<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;">No customer billing data</td></tr>`;
+
+    const printHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+      <title>Customer Billing Summary</title>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+      <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;font-size:11px;}
+        @media print{body{margin:0;}.no-print{display:none !important;}@page{size:A4 portrait;margin:14mm 12mm;}}
+        table{width:100%;border-collapse:collapse;}
+        th{background:#1a4d8f;color:#fff;padding:8px 10px;text-align:left;font-size:0.8em;text-transform:uppercase;}
+        td{border-bottom:1px solid #e2e8f0;padding:8px 10px;}
+      </style></head><body>
+      <div class="no-print" style="position:sticky;top:0;left:0;right:0;background:#0f172a;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-family:sans-serif;">
+        <div style="font-weight:700;font-size:0.95em;">📄 Customer Billing PDF Report Preview</div>
+        <button onclick="window.print()" style="background:#0d9488;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-weight:700;font-size:0.85em;cursor:pointer;">Print / Save PDF</button>
+      </div>
+      <div style="max-width:800px;margin:0 auto;padding:24px 28px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #1a4d8f;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            ${logoHTML}
+            <div>
+              <div style="font-family:'Playfair Display',serif;font-size:1.4em;font-weight:700;color:#1a4d8f;">${settings.company_name}</div>
+              <div style="color:#64748b;font-size:0.85em;">${settings.address||''} ${settings.phone ? '&bull; ' + settings.phone : ''}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'Playfair Display',serif;font-size:1.25em;font-weight:700;color:#1a4d8f;">CUSTOMER BILLING SUMMARY</div>
+            <div style="font-size:0.88em;color:#64748b;font-weight:600;">Generated: ${todayDisplay()}</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th style="text-align:center;">Orders</th>
+              <th style="text-align:right;">Total Billed</th>
+              <th style="text-align:right;">Paid</th>
+              <th style="text-align:right;">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+            <tr style="font-weight:700;background:#f8fafc;">
+              <td colspan="2" style="text-align:right;padding:12px 10px;">Grand Totals</td>
+              <td style="text-align:right;padding:12px 10px;">${formatCurrency(grandTotal)}</td>
+              <td style="text-align:right;padding:12px 10px;color:#16a34a;">${formatCurrency(grandPaid)}</td>
+              <td style="text-align:right;padding:12px 10px;color:${grandBalance>0?'#ef4444':'#16a34a'};">${formatCurrency(grandBalance)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      </body></html>`;
+
+    const w = window.open('', '_blank');
+    if (!w) return toast('Please allow pop-ups to view PDF report', 'warning');
+    w.document.write(printHTML);
+    w.document.close();
+  } catch (err) {
+    toast('Error generating report: ' + (err.message || err), 'error');
+  } finally {
+    hideProcessingOverlay();
+  }
 }
 function exportCustomerBilling(type) { exportData(window._reportData||[],'customer_billing',type); }
 
@@ -338,6 +454,7 @@ async function generateFullReport() {
     </div>`;
 
   document.getElementById('full-report-export').style.display='flex';
+  printFullReport();
   } finally {
     hideProcessingOverlay();
   }
@@ -363,7 +480,7 @@ function exportFullReport(type) {
 }
 
 async function printFullReport() {
-  showProcessingOverlay('Printing Full Report', 'Preparing print layout...');
+  showProcessingOverlay('Printing Full Report', 'Preparing PDF report preview...');
   try {
   const rows = window._fullReportData || [];
   const meta = window._fullReportMeta || {};
@@ -415,14 +532,18 @@ async function printFullReport() {
     <style>
       *{box-sizing:border-box;margin:0;padding:0;}
       body{font-family:'DM Sans',sans-serif;color:#1e293b;background:#fff;font-size:11px;}
-      @page{size:A4 landscape;margin:11mm 9mm;}
+      @media print{body{margin:0;}.no-print{display:none !important;}@page{size:A4 landscape;margin:11mm 9mm;}}
       table{width:100%;border-collapse:collapse;}
       thead{display:table-header-group;}
       tr{page-break-inside:avoid;}
       th{background:#1a4d8f;color:#fff;padding:8px 9px;text-align:left;font-size:0.78em;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;}
       td{border-bottom:1px solid #eef2f7;}
     </style></head><body>
-    <div style="padding:4px 6px;">
+    <div class="no-print" style="position:sticky;top:0;left:0;right:0;background:#0f172a;color:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-family:sans-serif;">
+      <div style="font-weight:700;font-size:0.95em;">📄 Full Report PDF Preview &mdash; ${formatDate(meta.from)} to ${formatDate(meta.to)}</div>
+      <button onclick="window.print()" style="background:#0d9488;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-weight:700;font-size:0.85em;cursor:pointer;">Print / Save PDF</button>
+    </div>
+    <div style="padding:16px 20px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #e2e8f0;padding-bottom:14px;margin-bottom:16px;">
         <div style="display:flex;align-items:center;gap:12px;">
           ${logoHTML}
@@ -488,13 +609,12 @@ async function printFullReport() {
         ${settings.company_name} &mdash; Full Report &mdash; ${formatDate(meta.from)} to ${formatDate(meta.to)}
       </div>
     </div>
-    <script>document.fonts.ready.then(()=>window.print());<\/script>
     </body></html>`;
 
   const w = window.open('', '_blank');
   if (!w) {
     hideProcessingOverlay();
-    return toast('Please allow pop-ups to print', 'warning');
+    return toast('Please allow pop-ups to view PDF report', 'warning');
   }
   w.document.write(printHTML);
   w.document.close();
