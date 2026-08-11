@@ -26,16 +26,17 @@ async function doLogin() {
     await DB.logAction('User Login', `User "${currentUser.display_name}" logged in successfully`, { username: user.username, role: user.role }, 'User');
 
     // Update topbar role chip
-    const roleNames = { admin: 'Admin', user: 'User', driver: 'Driver' };
+    const roleLetters = { admin: 'A', user: 'S', driver: 'D' };
+    const roleNames   = { admin: 'Admin', user: 'Staff User', driver: 'Driver' };
     const avatar = document.getElementById('topbar-avatar');
     if (avatar) {
+      const letter   = roleLetters[currentUser.role] || 'A';
       const roleText = roleNames[currentUser.role] || 'User';
-      avatar.textContent = roleText;
+      avatar.textContent = letter;
       avatar.title       = `${currentUser.display_name} (${roleText})`;
     }
     updateRoleChip();
     initApp();
-    setTimeout(initGlobalSearch,300);
   } catch (err) {
     console.error('Login error:', err);
     toast('Database error: ' + (err.message || err), 'error');
@@ -50,9 +51,11 @@ function updateRoleChip() {
 
   const avatar = document.getElementById('topbar-avatar');
   if (avatar && currentUser) {
-    const roleNames = { admin: 'Admin', user: 'User', driver: 'Driver' };
+    const roleLetters = { admin: 'A', user: 'S', driver: 'D' };
+    const roleNames   = { admin: 'Admin', user: 'Staff User', driver: 'Driver' };
+    const letter   = roleLetters[currentUser.role] || 'A';
     const roleText = roleNames[currentUser.role] || 'User';
-    avatar.textContent = roleText;
+    avatar.textContent = letter;
     avatar.title       = `${currentUser.display_name} (${roleText})`;
   }
   applyRoleSidebarRestrictions();

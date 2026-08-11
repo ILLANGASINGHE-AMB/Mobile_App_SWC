@@ -131,17 +131,17 @@
     .topbar-avatar {
       background: #f0a500;
       color: #000000;
-      padding: 5px 14px;
-      border-radius: 99px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
       font-weight: 800;
-      font-size: 0.82em;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
+      font-size: 0.95em;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(240, 165, 0, 0.35);
+      flex-shrink: 0;
     }
 
     /* Content */
@@ -1064,17 +1064,14 @@
         <div style="display:flex;align-items:center;gap:14px;">
           <h1 id="page-title">Dashboard</h1>
         </div>
-        <!-- Global Search -->
-        <div id="global-search-bar" style="position:relative;flex:1;max-width:380px;margin:0 16px;" class="no-print"></div>
         <div class="topbar-right">
-          <span id="topbar-date" style="font-size:0.82em;color:var(--text-muted);"></span>
-          <button onclick="toggleDark()" class="btn btn-secondary btn-icon" title="Toggle Dark Mode [Alt+T]">
-            <i class="fas fa-moon" id="dark-icon"></i>
+          <button onclick="openGlobalSearchModal()" class="btn btn-secondary btn-icon" title="Search [Ctrl+K]">
+            <i class="fas fa-search"></i>
           </button>
           <button onclick="navigate('settings')" class="btn btn-secondary btn-icon" title="Settings [Alt+S]">
             <i class="fas fa-cog"></i>
           </button>
-          <div class="topbar-avatar" id="topbar-avatar" title="Admin">Admin</div>
+          <div class="topbar-avatar" id="topbar-avatar" title="Admin">A</div>
         </div>
       </div>
       <div id="content">

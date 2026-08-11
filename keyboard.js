@@ -1,21 +1,54 @@
 // keyboard.js — Full keyboard navigation & universal global search
 
 // ─────────────────────────────────────────────
-// UNIVERSAL GLOBAL SEARCH BAR
+// UNIVERSAL GLOBAL SEARCH MODAL
 // ─────────────────────────────────────────────
-function initGlobalSearch() {
-  const bar = document.getElementById('global-search-bar');
-  if(!bar) return;
+function initGlobalSearch() {}
 
-  bar.innerHTML = `
-    <div style="position:relative;display:flex;align-items:center;background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:0 12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);width:100%;transition:all 0.2s;" id="gs-wrapper">
-      <i class="fas fa-search" style="color:var(--text-muted);font-size:0.9em;margin-right:8px;flex-shrink:0;"></i>
-      <input id="gs-input" class="form-input" style="border:none;padding:8px 0;font-size:0.88em;background:transparent;outline:none;width:100%;color:var(--text);"
-        placeholder="Search anything (Order ID, Customer, Driver, Invoice, Item)..." autocomplete="off" spellcheck="false"
-        oninput="onGsInput()" onkeydown="onGsKey(event)" onfocus="document.getElementById('gs-wrapper').style.borderColor='var(--primary)'" onblur="document.getElementById('gs-wrapper').style.borderColor='var(--border)'"/>
-      <kbd style="font-size:0.7em;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 6px;margin-left:6px;color:var(--text-muted);flex-shrink:0;font-weight:600;">Ctrl+K</kbd>
-    </div>
-    <div id="gs-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:9999;background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,0.18);max-height:420px;overflow-y:auto;padding:4px 0;"></div>`;
+function openGlobalSearchModal() {
+  let modal = document.getElementById('gs-modal-overlay');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'gs-modal-overlay';
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:99999;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);';
+    modal.innerHTML = `
+      <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:18px;box-shadow:0 20px 48px rgba(0,0,0,0.3);width:92%;max-width:540px;overflow:hidden;animation:fadeInDown 0.2s ease-out;" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);gap:10px;">
+          <i class="fas fa-search" style="color:var(--primary);font-size:1.1em;flex-shrink:0;"></i>
+          <input id="gs-input" class="form-input" style="border:none;padding:8px 0;font-size:1em;background:transparent;outline:none;width:100%;color:var(--text);"
+            placeholder="Search Order ID, Customer, Driver, Invoice, Item..." autocomplete="off" spellcheck="false"
+            oninput="onGsInput()" onkeydown="onGsKey(event)"/>
+          <button onclick="closeGlobalSearchModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2em;padding:4px;flex-shrink:0;"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="gs-dropdown" style="max-height:380px;overflow-y:auto;padding:6px 0;">
+          <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.88em;"><i class="fas fa-search" style="font-size:1.5em;margin-bottom:8px;display:block;opacity:0.5;"></i>Type to search across the entire system</div>
+        </div>
+      </div>
+    `;
+    modal.onclick = closeGlobalSearchModal;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  const input = document.getElementById('gs-input');
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 60);
+  }
+  const dd = document.getElementById('gs-dropdown');
+  if (dd) {
+    dd.style.display = 'block';
+    dd.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:0.88em;"><i class="fas fa-search" style="font-size:1.5em;margin-bottom:8px;display:block;opacity:0.5;"></i>Type to search across the entire system</div>`;
+  }
+}
+
+function closeGlobalSearchModal() {
+  const modal = document.getElementById('gs-modal-overlay');
+  if (modal) modal.style.display = 'none';
+}
+
+function closeGsDropdown() {
+  closeGlobalSearchModal();
 }
 
 let _gsDebounce = null;
@@ -42,8 +75,7 @@ function onGsKey(e) {
     if(active) { active.click(); return; }
     runGlobalSearch(true);
   } else if(e.key === 'Escape') {
-    closeGsDropdown();
-    document.getElementById('gs-input')?.blur();
+    closeGlobalSearchModal();
   }
 }
 
@@ -250,11 +282,10 @@ document.addEventListener('keydown', e => {
   const inInput = ['input','textarea','select'].includes(tag);
   const modal = document.querySelector('.modal-overlay[style*="flex"]');
 
-  // Ctrl+K — focus global search
+  // Ctrl+K — open global search modal
   if((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault();
-    const input = document.getElementById('gs-input');
-    if(input) { input.focus(); input.select(); }
+    openGlobalSearchModal();
     return;
   }
 
